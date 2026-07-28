@@ -22,6 +22,7 @@
 
 void hwInit(void);
 void SystemClock_Config(void);
+void MX_DMA_Init(void);
 
 uint32_t pre_time = 0;
 
@@ -46,13 +47,13 @@ int main(void)
 		  gpioPinToggle(LED);
 	  }
 
-//    if (uartAvailable(_DEF_UART1) > 0)
-//    {
-//      uint8_t rx_data;
-//      rx_data = uartRead(_DEF_UART1);
-//
-//      uartPrintf(_DEF_UART1, "Rx : 0x%X\r\n", rx_data);
-//    }
+    if (uartAvailable(_DEF_UART1) > 0)
+    {
+      uint8_t rx_data;
+      rx_data = uartRead(_DEF_UART1);
+
+      uartPrintf(_DEF_UART1, "Rx : 0x%X\r\n", rx_data);
+    }
     //cliMain();
   }
   /* USER CODE END 3 */
@@ -64,6 +65,7 @@ void hwInit(void)
     rtcInit();
   #endif
 //  usbInit();
+    cliInit();
 //  logInit();
 //  logOpen(HW_LOG_CH, 115200);
 //  logPrintf("\r\n[ Firmware Begin... ]\r\n");
@@ -71,16 +73,34 @@ void hwInit(void)
   //tim_Init();
   //tim_Begin(_DEF_TIM3);
   gpioInit();
-//  uartInit();
+  uartInit();
 
 
-  uartOpen(_DEF_UART1, 57600);
+//  uartOpen(_DEF_UART1, 57600);
 //  adcInit();
 //  buttonInit();
 //  flashInit();
-//  MX_DMA_Init();
+  MX_DMA_Init();
 
 //  spiInit();
+
+  //  if (sdInit() == true)
+  //  {
+  //    fatfsInit();
+  //  }
+
+  cliOpen(_DEF_UART1, 115200);
+  lcdInit();
+
+  ssd1306_SetCursor(0, 0);
+  ssd1306_WriteString("Hello", Font_11x18, White);
+  ssd1306_UpdateScreen();
+  HAL_Delay(10);
+
+  ssd1306_SetCursor(0, 1);
+  ssd1306_WriteString("World", Font_11x18, White);
+  ssd1306_UpdateScreen();
+  HAL_Delay(10);
 
 }
 
@@ -121,6 +141,28 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel4_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
+  /* DMA1_Channel5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
+  /* DMA1_Channel6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
+  /* DMA1_Channel7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
+
 }
 
 /* USER CODE BEGIN 4 */

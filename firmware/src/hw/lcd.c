@@ -93,21 +93,21 @@ bool lcdInit(void)
   HAL_Delay(500);
 #endif
 
-  lcd.setCallBack(TransferDoneISR);
+  //lcd.setCallBack(TransferDoneISR);
 
-  for (int i=0; i<LCD_WIDTH*LCD_HEIGHT; i++)
-  {
-    frame_buffer[0][i] = black;
-  }
-  memset(frame_buffer, 0x00, sizeof(frame_buffer));
-
-  p_draw_frame_buf = frame_buffer[frame_index];
-
-
-  lcdDrawFillRect(0, 0, LCD_WIDTH, LCD_HEIGHT, black);
-  lcdUpdateDraw();
-
-  lcdSetBackLight(100);
+//  for (int i=0; i<LCD_WIDTH*LCD_HEIGHT; i++)
+//  {
+//    frame_buffer[0][i] = black;
+//  }
+//  memset(frame_buffer, 0x00, sizeof(frame_buffer));
+//
+//  p_draw_frame_buf = frame_buffer[frame_index];
+//
+//
+//  lcdDrawFillRect(0, 0, LCD_WIDTH, LCD_HEIGHT, black);
+//  lcdUpdateDraw();
+//
+//  lcdSetBackLight(100);
 
 
   if (is_init != true)
