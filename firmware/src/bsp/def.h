@@ -49,11 +49,12 @@
 #define _DEF_INPUT_PULLUP     1
 #define _DEF_INPUT_PULLDOWN   2
 #define _DEF_INPUT_IT_RISING  3
-#define _DEF_OUTPUT           4
-#define _DEF_OUTPUT_PULLUP    5
-#define _DEF_OUTPUT_PULLDOWN  6
-#define _DEF_INPUT_AF_PP      7
-#define _DEF_INPUT_ANALOG     8
+#define _DEF_INPUT_IT_RF      4
+#define _DEF_OUTPUT           5
+#define _DEF_OUTPUT_PULLUP    6
+#define _DEF_OUTPUT_PULLDOWN  7
+#define _DEF_INPUT_AF_PP      8
+#define _DEF_INPUT_ANALOG     9
 
 
 #endif /* SRC_COMMON_DEF_H_ */

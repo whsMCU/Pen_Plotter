@@ -24,6 +24,8 @@
 #include "cli_gui.h"
 #include "log.h"
 
+#include "RotaryEncoder.h"
+
 
 
 void hwInit(void);

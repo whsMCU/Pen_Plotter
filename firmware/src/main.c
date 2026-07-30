@@ -25,6 +25,9 @@ void SystemClock_Config(void);
 void MX_DMA_Init(void);
 
 uint32_t pre_time = 0;
+int32_t newPos = 0;
+int32_t pos = 0;
+int32_t dir = 0;
 
 int main(void)
 {
@@ -46,6 +49,23 @@ int main(void)
 	    pre_time = micros();
 		  gpioPinToggle(LED);
 	  }
+
+	  newPos = getPosition();
+	  if (pos != newPos) {
+
+	  	dir = getDirection();
+	    pos = newPos;
+	  }
+
+	  char buffer[32];
+
+	  sprintf(buffer, "P:%ld, D:%ld", newPos, dir);
+
+	  ssd1306_WriteString(buffer, Font_7x10, White);
+
+	  ssd1306_SetCursor(0, 0);
+	  ssd1306_WriteString(buffer, Font_11x18, White);
+	  ssd1306_UpdateScreen();
 
     if (uartAvailable(_DEF_UART1) > 0)
     {
@@ -74,6 +94,8 @@ void hwInit(void)
   //tim_Begin(_DEF_TIM3);
   gpioInit();
   uartInit();
+
+  RotaryEncoder_init(TWO03);
 
 
 //  uartOpen(_DEF_UART1, 57600);

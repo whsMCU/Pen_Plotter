@@ -23,7 +23,10 @@ typedef struct
 
 const gpio_tbl_t gpio_tbl[GPIO_MAX_CH] =
 {
-  {GPIOB, GPIO_PIN_2,  _DEF_OUTPUT,   GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_HIGH},    //  0. LED
+  {GPIOB, GPIO_PIN_2,  _DEF_OUTPUT,   		 		  GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_HIGH}, //  0. LED
+	{GPIOC, GPIO_PIN_13,  _DEF_INPUT_IT_RF,  		  GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  1. RotaryEncoder_1
+	{GPIOC, GPIO_PIN_14,  _DEF_INPUT_IT_RF,   	  GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  2. RotaryEncoder_2
+	{GPIOC, GPIO_PIN_15,  _DEF_INPUT_IT_RISING,   GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  3. Push_button
 };
 
 
@@ -52,8 +55,8 @@ bool gpioInit(void)
   }
 
   /* EXTI interrupt init*/
-  //HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
-  //HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 #ifdef _USE_HW_CLI
   cliAdd("gpio", cliGpio);
@@ -95,6 +98,12 @@ bool gpioPinMode(uint8_t ch, uint8_t mode)
 
     case _DEF_INPUT_IT_RISING:
       GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+      break;
+
+    case _DEF_INPUT_IT_RF:
+      GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
       GPIO_InitStruct.Pull = GPIO_NOPULL;
       GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
       break;
@@ -176,6 +185,11 @@ void gpioPinToggle(uint8_t ch)
   }
 
   HAL_GPIO_TogglePin(gpio_tbl[ch].port, gpio_tbl[ch].pin);
+}
+
+uint32_t getgpioPin(uint8_t ch)
+{
+	return gpio_tbl[ch].pin;
 }
 
 #ifdef _USE_HW_CLI
