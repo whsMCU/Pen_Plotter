@@ -338,10 +338,6 @@ void delayUs(uint32_t us)
   }
 }
 
-
-
-
-
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
 {
   UNUSED(hi2c);

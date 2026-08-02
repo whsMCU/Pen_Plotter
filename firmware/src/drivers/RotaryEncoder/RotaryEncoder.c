@@ -49,8 +49,8 @@ long getPosition() {
   return encoder._positionExt;
 }  // getPosition()
 
-Direction getDirection() {
-  Direction ret = NOROTATION;
+Direction_t getDirection() {
+  Direction_t ret = NOROTATION;
 
   if (encoder._positionExtPrev > encoder._positionExt) {
     ret = COUNTERCLOCKWISE;
@@ -88,6 +88,17 @@ void setPosition(long newPosition) {
 
 // Slow, but Simple Variant by directly Read-Out of the Digital State within loop-call
 void tick(void) {
+
+  static uint32_t lastTick = 0;
+
+  uint32_t now = millis();
+
+  // 2ms 이내 변화 무시
+  if((now - lastTick) < 3)
+      return;
+
+  lastTick = now;
+
   bool sig1 = gpioPinRead(RotaryEncoder_1);
   bool sig2 = gpioPinRead(RotaryEncoder_2);
   tick_cal(sig1, sig2);
@@ -145,6 +156,8 @@ unsigned long getRPM() {
   unsigned long t = max(timeBetweenLastPositions, timeToLastPosition);
   return 60000.0 / ((float)(t * 20));
 }
+volatile uint32_t exti13_count;
+volatile uint32_t exti14_count;
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
@@ -152,10 +165,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   {
       case GPIO_PIN_13:
       		tick();
+      		exti13_count++;
           break;
 
       case GPIO_PIN_14:
       		tick();
+      		exti14_count++;
           break;
   }
 }

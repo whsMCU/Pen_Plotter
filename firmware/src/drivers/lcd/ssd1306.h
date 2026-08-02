@@ -55,6 +55,7 @@ extern I2C_HandleTypeDef SSD1306_I2C_PORT;
 uint8_t ssd1306_Init(void);
 void ssd1306_Fill(SSD1306_COLOR color);
 void ssd1306_UpdateScreen(void);
+void SSD1306_Clear(void);
 void ssd1306_DrawPixel(uint8_t x, uint8_t y, SSD1306_COLOR color);
 char ssd1306_WriteChar(char ch, FontDef Font, SSD1306_COLOR color);
 char ssd1306_WriteString(char* str, FontDef Font, SSD1306_COLOR color);
@@ -69,6 +70,8 @@ void ssd1306_DrawFilledCircle(int16_t x0, int16_t y0, int16_t r, SSD1306_COLOR c
 
 void ssd1306_ON(void);
 void ssd1306_OFF(void);
+
+uint32_t SSD1306_get_fps(void);
 	
 //static void ssd1306_WriteCommand(uint8_t command);
 

@@ -19,15 +19,23 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
+// Declare system global variable structure
+system_t sys;
+int32_t sys_position[N_AXIS];      // Real-time machine (aka home) position vector in steps.
+int32_t sys_probe_position[N_AXIS]; // Last probe position in machine coordinates and steps.
+volatile uint8_t sys_probe_state;   // Probing state value.  Used to coordinate the probing cycle with stepper ISR.
+volatile uint8_t sys_rt_exec_state;   // Global realtime executor bitflag variable for state management. See EXEC bitmasks.
+volatile uint8_t sys_rt_exec_alarm;   // Global realtime executor bitflag variable for setting various alarms.
+volatile uint8_t sys_rt_exec_motion_override; // Global realtime executor bitflag variable for motion-based overrides.
+volatile uint8_t sys_rt_exec_accessory_override; // Global realtime executor bitflag variable for spindle/coolant overrides.
+#ifdef DEBUG
+  volatile uint8_t sys_rt_exec_debug;
+#endif
+
 
 void hwInit(void);
 void SystemClock_Config(void);
 void MX_DMA_Init(void);
-
-uint32_t pre_time = 0;
-int32_t newPos = 0;
-int32_t pos = 0;
-int32_t dir = 0;
 
 int main(void)
 {
@@ -39,42 +47,12 @@ int main(void)
 
   /* Initialize all configured peripherals */
   hwInit();
-  pre_time = micros();
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if(micros()-pre_time >= 500000)
-	  {
-	    pre_time = micros();
-		  gpioPinToggle(LED);
-	  }
-
-	  newPos = getPosition();
-	  if (pos != newPos) {
-
-	  	dir = getDirection();
-	    pos = newPos;
-	  }
-
-	  char buffer[32];
-
-	  sprintf(buffer, "P:%ld, D:%ld", newPos, dir);
-
-	  ssd1306_WriteString(buffer, Font_7x10, White);
-
-	  ssd1306_SetCursor(0, 0);
-	  ssd1306_WriteString(buffer, Font_11x18, White);
-	  ssd1306_UpdateScreen();
-
-    if (uartAvailable(_DEF_UART1) > 0)
-    {
-      uint8_t rx_data;
-      rx_data = uartRead(_DEF_UART1);
-
-      uartPrintf(_DEF_UART1, "Rx : 0x%X\r\n", rx_data);
-    }
-    //cliMain();
+  	Scheduler_Run();
   }
   /* USER CODE END 3 */
 }
@@ -90,8 +68,8 @@ void hwInit(void)
 //  logOpen(HW_LOG_CH, 115200);
 //  logPrintf("\r\n[ Firmware Begin... ]\r\n");
 
-  //tim_Init();
-  //tim_Begin(_DEF_TIM3);
+  tim_Init();
+  tim_Begin(_DEF_TIM2);
   gpioInit();
   uartInit();
 
@@ -104,26 +82,9 @@ void hwInit(void)
 //  flashInit();
   MX_DMA_Init();
 
-//  spiInit();
-
-  //  if (sdInit() == true)
-  //  {
-  //    fatfsInit();
-  //  }
-
   cliOpen(_DEF_UART1, 115200);
-  lcdInit();
 
-  ssd1306_SetCursor(0, 0);
-  ssd1306_WriteString("Hello", Font_11x18, White);
-  ssd1306_UpdateScreen();
-  HAL_Delay(10);
-
-  ssd1306_SetCursor(0, 1);
-  ssd1306_WriteString("World", Font_11x18, White);
-  ssd1306_UpdateScreen();
-  HAL_Delay(10);
-
+  ssd1306_Init();
 }
 
 /**

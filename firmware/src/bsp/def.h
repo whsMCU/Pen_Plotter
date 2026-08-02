@@ -8,6 +8,7 @@
 #ifndef SRC_COMMON_DEF_H_
 #define SRC_COMMON_DEF_H_
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>

@@ -6,6 +6,29 @@ static uint8_t SSD1306_Buffer[SSD1306_WIDTH * SSD1306_HEIGHT / 8];
 // Een scherm-object om lokaal in te werken
 static SSD1306_t SSD1306;
 
+static bool lcd_request_draw = false;
+
+static volatile uint32_t fps_pre_time;
+static volatile uint32_t fps_time;
+static volatile uint32_t fps_count = 0;
+
+void TransferDoneISR(void)
+{
+  fps_time = millis() - fps_pre_time;
+  fps_pre_time = millis();
+
+  if (fps_time > 0)
+  {
+    fps_count = 1000 / fps_time;
+  }
+
+  lcd_request_draw = false;
+}
+
+uint32_t SSD1306_get_fps(void)
+{
+	return fps_time;
+}
 
 //
 //	Een byte sturen naar het commando register
@@ -13,19 +36,6 @@ static SSD1306_t SSD1306;
 //
 static void ssd1306_WriteCommand(uint8_t command)
 {
-	/**
-  * @brief  Read an amount of data in blocking mode from a specific memory address
-  * @param  hi2c Pointer to a I2C_HandleTypeDef structure that contains
-  *                the configuration information for the specified I2C.
-  * @param  DevAddress Target device address: The device 7 bits address value
-  *         in datasheet must be shift at right before call interface
-  * @param  MemAddress Internal memory address
-  * @param  MemAddSize Size of internal memory address
-  * @param  pData Pointer to data buffer
-  * @param  Size Amount of data to be sent
-  * @param  Timeout Timeout duration
-  * @retval HAL status
-  */
 	HAL_I2C_Mem_Write(&hi2c1,SSD1306_I2C_ADDR,0x00,1,&command,1,10);
 }
 
@@ -35,20 +45,22 @@ static void ssd1306_WriteCommand(uint8_t command)
 //
 uint8_t ssd1306_Init(void)
 {	
+
+  i2cBegin(_DEF_I2C1, 400);
 	// Even wachten zodat het scherm zeker opgestart is
 	HAL_Delay(100);
 	
 	/* Init LCD */
 	ssd1306_WriteCommand(0xAE); //display off
 	ssd1306_WriteCommand(0x20); //Set Memory Addressing Mode   
-	ssd1306_WriteCommand(0x10); //00,Horizontal Addressing Mode;01,Vertical Addressing Mode;10,Page Addressing Mode (RESET);11,Invalid
+	ssd1306_WriteCommand(0x02); //00,Horizontal Addressing Mode;01,Vertical Addressing Mode;10,Page Addressing Mode (RESET);11,Invalid
 	ssd1306_WriteCommand(0xB0); //Set Page Start Address for Page Addressing Mode,0-7
 	ssd1306_WriteCommand(0xC8); //Set COM Output Scan Direction
-	ssd1306_WriteCommand(0x00); //---set low column address
+	ssd1306_WriteCommand(0x02); //---set low column address
 	ssd1306_WriteCommand(0x10); //---set high column address
 	ssd1306_WriteCommand(0x40); //--set start line address
 	ssd1306_WriteCommand(0x81); //--set contrast control register
-	ssd1306_WriteCommand(0xFF);
+	ssd1306_WriteCommand(0x80);
 	ssd1306_WriteCommand(0xA1); //--set segment re-map 0 to 127
 	ssd1306_WriteCommand(0xA6); //--set normal display
 	ssd1306_WriteCommand(0xA8); //--set multiplex ratio(1 to 64)
@@ -57,15 +69,16 @@ uint8_t ssd1306_Init(void)
 	ssd1306_WriteCommand(0xD3); //-set display offset
 	ssd1306_WriteCommand(0x00); //-not offset
 	ssd1306_WriteCommand(0xD5); //--set display clock divide ratio/oscillator frequency
-	ssd1306_WriteCommand(0xF0); //--set divide ratio
+	ssd1306_WriteCommand(0x80); //--set divide ratio
 	ssd1306_WriteCommand(0xD9); //--set pre-charge period
 	ssd1306_WriteCommand(0x22); //
 	ssd1306_WriteCommand(0xDA); //--set com pins hardware configuration
 	ssd1306_WriteCommand(0x12);
 	ssd1306_WriteCommand(0xDB); //--set vcomh
-	ssd1306_WriteCommand(0x20); //0x20,0.77xVcc
-	ssd1306_WriteCommand(0x8D); //--set DC-DC enable
-	ssd1306_WriteCommand(0x14); //
+	ssd1306_WriteCommand(0x35); //0x20,0.77xVcc
+	ssd1306_WriteCommand(0xAD); //--set DC-DC enable
+	ssd1306_WriteCommand(0x8B); //
+	ssd1306_WriteCommand(0xA4); //
 	ssd1306_WriteCommand(0xAF); //--turn on SSD1306 panel
 	
 	/* Clearen scherm */
@@ -103,18 +116,27 @@ void ssd1306_Fill(SSD1306_COLOR color)
 //
 //	Alle weizigingen in de buffer naar het scherm sturen
 //
+#define SH1106_OFFSET 2
+uint32_t screen_send_time = 0;
+uint32_t screen_send_time_tmp = 0;
 void ssd1306_UpdateScreen(void) 
 {
 	uint8_t i;
-	
+	lcd_request_draw = true;
+
 	for (i = 0; i < 8; i++) {
 		ssd1306_WriteCommand(0xB0 + i);
-		ssd1306_WriteCommand(0x00);
-		ssd1306_WriteCommand(0x10);
+		ssd1306_WriteCommand(SH1106_OFFSET & 0x0F);
+		ssd1306_WriteCommand(0x10 | (SH1106_OFFSET >> 4));
 
 		// We schrijven alles map per map weg
 		HAL_I2C_Mem_Write(&hi2c1, SSD1306_I2C_ADDR, 0x40, 1, &SSD1306_Buffer[SSD1306_WIDTH * i], SSD1306_WIDTH, 100);
 	}
+}
+
+void SSD1306_Clear(void)
+{
+    memset(SSD1306_Buffer, 0x00, sizeof(SSD1306_Buffer));
 }
 
 //
@@ -512,4 +534,10 @@ void ssd1306_OFF(void)
 	ssd1306_WriteCommand(0xAE);  
 }
 
-
+void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+	if(hi2c->Instance == I2C1)
+	{
+		TransferDoneISR();
+	}
+}

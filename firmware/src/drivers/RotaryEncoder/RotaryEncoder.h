@@ -21,7 +21,7 @@ typedef enum {
 	NOROTATION = 0,
 	CLOCKWISE = 1,
 	COUNTERCLOCKWISE = -1
-}Direction;
+}Direction_t;
 
 typedef enum {
 	FOUR3 = 1,  // 4 steps, Latch at position 3 only (compatible to older versions)
@@ -53,7 +53,7 @@ void RotaryEncoder_init(LatchMode mode);
 long getPosition();
 
 // simple retrieve of the direction the knob was rotated last time. 0 = No rotation, 1 = Clockwise, -1 = Counter Clockwise
-Direction getDirection();
+Direction_t getDirection();
 
 // adjust the current position
 void setPosition(long newPosition);
