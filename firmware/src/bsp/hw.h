@@ -26,33 +26,7 @@
 
 #include "RotaryEncoder.h"
 #include "scheduler.h"
-
-
-// Grbl versioning system
-#define GRBL_VERSION "1.1h"
-#define GRBL_VERSION_BUILD "20190825"
-
-// Define the Grbl system include files. NOTE: Do not alter organization.
-#include "config.h"
-#include "nuts_bolts.h"
-#include "settings.h"
-#include "system.h"
-#include "defaults.h"
-#include "cpu_map.h"
-#include "coolant_control.h"
-#include "eeprom.h"
-#include "gcode.h"
-#include "limits.h"
-#include "motion_control.h"
-#include "planner.h"
-#include "print.h"
-#include "probe.h"
-#include "protocol.h"
-#include "report.h"
-#include "serial.h"
-#include "spindle_control.h"
-#include "stepper.h"
-#include "jog.h"
+#include "AccelStepper.h"
 
 
 void hwInit(void);

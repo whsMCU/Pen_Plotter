@@ -10,6 +10,8 @@
 
 #define TASK_COUNT (sizeof(taskTable)/sizeof(Task_t))
 
+//stepper motors
+
 void Task_UART(void);
 void Task_Gcode(void);
 void Task_Motion(void);

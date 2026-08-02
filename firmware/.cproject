@@ -49,9 +49,9 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/bsp}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/common}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/drivers/grbl}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/drivers/lcd}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/drivers/RotaryEncoder}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/drivers/stepper}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/hw}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/scheduler}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Startup}&quot;"/>
@@ -81,7 +81,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="src/drivers/grbl/etc|src/common/pending|src/hw/pending|Pen_Plotter_Cube|src/drivers/Stepper/etc|lib/USB_DEVICE|lib/Middlewares" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="src/drivers/stepper/etc|src/common/pending|src/hw/pending|Pen_Plotter_Cube|src/drivers/Stepper/etc|lib/USB_DEVICE|lib/Middlewares" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -154,7 +154,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="src/drivers/grbl/etc|src/common/pending|src/hw/pending|Pen_Plotter_Cube|src/drivers/Stepper/etc|lib/USB_DEVICE|lib/Middlewares" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="src/drivers/stepper/etc|src/common/pending|src/hw/pending|Pen_Plotter_Cube|src/drivers/Stepper/etc|lib/USB_DEVICE|lib/Middlewares" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
