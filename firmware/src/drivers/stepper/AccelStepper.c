@@ -10,8 +10,10 @@ AccelStepper stepperY;
 
 static void TimerCallbackISR(void)
 {
+  // Change direction at the limits
+  if (distanceToGo(&stepperX) == 0)
+  	moveTo(&stepperX, -currentPosition(&stepperX));
   run(&stepperX);
-  run(&stepperY);
 }
 
 void AccelStepper_init(AccelStepper *stepper, uint8_t enPin, uint8_t stepPin, uint8_t dirPin, bool enable)

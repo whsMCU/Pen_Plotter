@@ -67,7 +67,7 @@ bool tim_Begin(uint8_t ch)
       p_tim->h_tim = &htim2;
       p_tim->func_cb = NULL;
 
-      htim2.Instance = TIM3;
+      htim2.Instance = TIM2;
       htim2.Init.Prescaler = 72-1;
       htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
       htim2.Init.Period = 65535;

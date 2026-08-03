@@ -56,6 +56,9 @@ typedef struct _AccelStepper{
 
 void AccelStepper_init(AccelStepper *stepper, uint8_t enPin, uint8_t stepPin, uint8_t dirPin, bool enable);
 
+extern AccelStepper stepperX;
+extern AccelStepper stepperY;
+
 void    moveTo(AccelStepper *stepper, long absolute);
 void    move(AccelStepper *stepper, long relative);
 bool    run(AccelStepper *stepper);

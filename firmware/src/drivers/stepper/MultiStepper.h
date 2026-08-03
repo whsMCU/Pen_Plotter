@@ -7,20 +7,22 @@
 
 #define MULTISTEPPER_MAX_STEPPERS 10
 
-bool addStepper(MultiStepper *multi_stepper, AccelStepper& stepper);
+typedef struct _AccelStepper AccelStepper;
 
 typedef struct _MultiStepper{
 
-AccelStepper* _steppers[MULTISTEPPER_MAX_STEPPERS];
-uint8_t       _num_steppers;
+	AccelStepper* _steppers[MULTISTEPPER_MAX_STEPPERS];
+	uint8_t       _num_steppers;
 
 } MultiStepper;
 
-void multi_moveTo(long absolute[]);
+bool addStepper(MultiStepper *multi_stepper, AccelStepper *stepper);
 
-bool multi_run();
+void multi_moveTo(MultiStepper *multi_stepper, long absolute[]);
 
-void multi_runSpeedToPosition();
+bool multi_run(MultiStepper *multi_stepper);
+
+void multi_runSpeedToPosition(MultiStepper *multi_stepper);
 
 
 
