@@ -23,9 +23,6 @@ void hwInit(void);
 void SystemClock_Config(void);
 void MX_DMA_Init(void);
 
-AccelStepper stepperX;
-AccelStepper stepperY;
-
 int main(void)
 {
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */

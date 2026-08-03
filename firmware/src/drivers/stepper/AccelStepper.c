@@ -5,6 +5,51 @@
 
 #include "AccelStepper.h"
 
+AccelStepper stepperX;
+AccelStepper stepperY;
+
+static void TimerCallbackISR(void)
+{
+  run(&stepperX);
+  run(&stepperY);
+}
+
+void AccelStepper_init(AccelStepper *stepper, uint8_t enPin, uint8_t stepPin, uint8_t dirPin, bool enable)
+{
+	stepper->_interface = DRIVER;
+	stepper->_currentPos = 0;
+	stepper->_targetPos = 0;
+	stepper->_speed = 0.0;
+	stepper->_maxSpeed = 0.0;
+	stepper->_acceleration = 0.0;
+	stepper->_sqrt_twoa = 1.0;
+	stepper->_stepInterval = 0;
+	stepper->_minPulseWidth = 1;
+	stepper->_enablePin = enPin;
+	stepper->_lastStepTime = 0;
+	stepper->_pin[0] = stepPin;
+	stepper->_pin[1] = dirPin;
+	stepper->_enableInverted = false;
+    
+    // NEW
+	stepper->_n = 0;
+	stepper->_c0 = 0.0;
+	stepper->_cn = 0.0;
+	stepper->_cmin = 1.0;
+	stepper->_direction = DIRECTION_CCW;
+
+	timAttachInterrupt(_DEF_TIM2, TimerCallbackISR);
+
+	int i;
+	for (i = 0; i < 2; i++)
+		stepper->_pinInverted[i] = 0;
+	if (enable)
+		enableOutputs(stepper);
+	// Some reasonable default
+	setAcceleration(stepper, 1);
+	setMaxSpeed(stepper, 1);
+}
+
 void moveTo(AccelStepper *stepper, long absolute)
 {
   if (stepper->_targetPos != absolute)
@@ -159,40 +204,6 @@ bool run(AccelStepper *stepper)
     if (runSpeed(stepper))
     	computeNewSpeed(stepper);
     return stepper->_speed != 0.0 || distanceToGo(stepper) != 0;
-}
-
-void AccelStepper_init(AccelStepper *stepper, uint8_t enPin, uint8_t stepPin, uint8_t dirPin, bool enable)
-{
-	stepper->_interface = DRIVER;
-	stepper->_currentPos = 0;
-	stepper->_targetPos = 0;
-	stepper->_speed = 0.0;
-	stepper->_maxSpeed = 0.0;
-	stepper->_acceleration = 0.0;
-	stepper->_sqrt_twoa = 1.0;
-	stepper->_stepInterval = 0;
-	stepper->_minPulseWidth = 1;
-	stepper->_enablePin = enPin;
-	stepper->_lastStepTime = 0;
-	stepper->_pin[0] = stepPin;
-	stepper->_pin[1] = dirPin;
-	stepper->_enableInverted = false;
-    
-    // NEW
-	stepper->_n = 0;
-	stepper->_c0 = 0.0;
-	stepper->_cn = 0.0;
-	stepper->_cmin = 1.0;
-	stepper->_direction = DIRECTION_CCW;
-
-	int i;
-	for (i = 0; i < 2; i++)
-		stepper->_pinInverted[i] = 0;
-	if (enable)
-		enableOutputs(stepper);
-	// Some reasonable default
-	setAcceleration(stepper, 1);
-	setMaxSpeed(stepper, 1);
 }
 
 void setMaxSpeed(AccelStepper *stepper, float speed)
