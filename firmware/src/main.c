@@ -19,9 +19,14 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
+#include "scheduler/scheduler.h"
+#include "scheduler/tasks.h"
+
 void hwInit(void);
 void SystemClock_Config(void);
 void MX_DMA_Init(void);
+void scheduler_run(void);
+void init(void);
 
 int main(void)
 {
@@ -32,15 +37,21 @@ int main(void)
   SystemClock_Config();
 
   /* Initialize all configured peripherals */
+  cycleCounterInit();
   hwInit();
+  init();
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-  	Scheduler_Run();
-  }
+  scheduler_run();
   /* USER CODE END 3 */
+}
+
+void FAST_CODE scheduler_run(void)
+{
+    while (true) {
+    	scheduler();
+    }
 }
 
 void hwInit(void)
@@ -75,10 +86,16 @@ void hwInit(void)
   AccelStepper_init(&stepperX, StepX_EN, StepX_STEP, StepX_DIR, true);  //(driver type, STEP, DIR) Driver X
   AccelStepper_init(&stepperY, StepY_EN, StepY_STEP, StepY_DIR, true);  //(driver type, STEP, DIR) Driver Y
 
-  setMaxSpeed(&stepperX, 100);
-  setAcceleration(&stepperX, 20);
-  moveTo(&stepperX, 500);
+  setMaxSpeed(&stepperX, 500);
+  setAcceleration(&stepperX, 500);
+  moveTo(&stepperX, 4000);
 
+}
+
+void init(void)
+{
+	tasksInitData();
+	tasksInit();
 }
 
 /**

@@ -16,9 +16,29 @@ static volatile uint32_t sysTickValStamp = 0;
 
 static volatile int sysTickPending = 0;
 
+// cached value of RCC->CSR
+static uint32_t cpuClockFrequency = 0;
+
+void cycleCounterInit(void)
+{
+  cpuClockFrequency = HAL_RCC_GetSysClockFreq();
+
+  usTicks = cpuClockFrequency / 1000000;
+
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+
+  DWT->CYCCNT = 0;
+  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+}
+
 void HAL_SYSTICK_Callback(void)
 {
     sysTickUptime++;
+}
+
+uint32_t getCycleCounter(void)
+{
+    return DWT->CYCCNT;
 }
 
 int32_t clockCyclesToMicros(int32_t clockCycles)
@@ -58,7 +78,7 @@ uint32_t micros(void)
 		ms = sysTickUptime;
 		cycle_cnt = SysTick->VAL;
 	} while (ms != sysTickUptime);
-	return (ms * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks; //168
+	return (ms * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks; //72
 }
 
 void delayMicroseconds(uint32_t us)

@@ -156,24 +156,8 @@ unsigned long getRPM() {
   unsigned long t = max(timeBetweenLastPositions, timeToLastPosition);
   return 60000.0 / ((float)(t * 20));
 }
-volatile uint32_t exti13_count;
-volatile uint32_t exti14_count;
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  switch(GPIO_Pin)
-  {
-      case GPIO_PIN_13:
-      		tick();
-      		exti13_count++;
-          break;
 
-      case GPIO_PIN_14:
-      		tick();
-      		exti14_count++;
-          break;
-  }
-}
 
 
 

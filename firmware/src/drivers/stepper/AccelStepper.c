@@ -8,17 +8,23 @@
 AccelStepper stepperX;
 AccelStepper stepperY;
 
+uint32_t callback_time, callback_pretime = 0;
+
 static void TimerCallbackISR(void)
 {
+	callback_time = micros() - callback_pretime;
+  callback_pretime = micros();
   // Change direction at the limits
   if (distanceToGo(&stepperX) == 0)
+  {
   	moveTo(&stepperX, -currentPosition(&stepperX));
+  }
   run(&stepperX);
+
 }
 
-void AccelStepper_init(AccelStepper *stepper, uint8_t enPin, uint8_t stepPin, uint8_t dirPin, bool enable)
+void AccelStepper_init(AccelStepper *stepper, uint8_t enablePin, uint8_t stepPin, uint8_t dirPin, bool enable)
 {
-	stepper->_interface = DRIVER;
 	stepper->_currentPos = 0;
 	stepper->_targetPos = 0;
 	stepper->_speed = 0.0;
@@ -27,10 +33,10 @@ void AccelStepper_init(AccelStepper *stepper, uint8_t enPin, uint8_t stepPin, ui
 	stepper->_sqrt_twoa = 1.0;
 	stepper->_stepInterval = 0;
 	stepper->_minPulseWidth = 1;
-	stepper->_enablePin = enPin;
+	stepper->_enablePin = enablePin;
 	stepper->_lastStepTime = 0;
-	stepper->_pin[0] = stepPin;
-	stepper->_pin[1] = dirPin;
+	stepper->_stepPin = stepPin;
+	stepper->_dirPin = dirPin;
 	stepper->_enableInverted = false;
     
     // NEW
@@ -42,14 +48,25 @@ void AccelStepper_init(AccelStepper *stepper, uint8_t enPin, uint8_t stepPin, ui
 
 	timAttachInterrupt(_DEF_TIM2, TimerCallbackISR);
 
-	int i;
-	for (i = 0; i < 2; i++)
-		stepper->_pinInverted[i] = 0;
-	if (enable)
-		enableOutputs(stepper);
+	gpioPinWrite(stepper->_enablePin,  _DEF_LOW);
 	// Some reasonable default
 	setAcceleration(stepper, 1);
 	setMaxSpeed(stepper, 1);
+}
+
+long distanceToGo(AccelStepper *stepper)
+{
+    return stepper->_targetPos - stepper->_currentPos;
+}
+
+long targetPosition(AccelStepper *stepper)
+{
+    return stepper->_targetPos;
+}
+
+long currentPosition(AccelStepper *stepper)
+{
+    return stepper->_currentPos;
 }
 
 void moveTo(AccelStepper *stepper, long absolute)
@@ -78,41 +95,26 @@ bool runSpeed(AccelStepper *stepper)
     unsigned long time = micros();   
     if (time - stepper->_lastStepTime >= stepper->_stepInterval)
     {
-	if (stepper->_direction == DIRECTION_CW)
-	{
-	    // Clockwise
-		stepper->_currentPos += 1;
-	}
-	else
-	{
-	    // Anticlockwise  
-		stepper->_currentPos -= 1;
-	}
-	step(stepper, stepper->_currentPos);
+			if (stepper->_direction == DIRECTION_CW)
+			{
+					// Clockwise
+				stepper->_currentPos += 1;
+			}
+			else
+			{
+					// Anticlockwise
+				stepper->_currentPos -= 1;
+			}
+			step(stepper, stepper->_currentPos);
 
-	stepper->_lastStepTime = time; // Caution: does not account for costs in step()
+			stepper->_lastStepTime = time; // Caution: does not account for costs in step()
 
-	return true;
+			return true;
     }
     else
     {
-	return false;
+			return false;
     }
-}
-
-long distanceToGo(AccelStepper *stepper)
-{
-    return stepper->_targetPos - stepper->_currentPos;
-}
-
-long targetPosition(AccelStepper *stepper)
-{
-    return stepper->_targetPos;
-}
-
-long currentPosition(AccelStepper *stepper)
-{
-    return stepper->_currentPos;
 }
 
 // Useful during initialisations or after initial positioning
@@ -143,37 +145,37 @@ unsigned long computeNewSpeed(AccelStepper *stepper)
 
     if (distanceTo > 0)
     {
-	// We are anticlockwise from the target
-	// Need to go clockwise from here, maybe decelerate now
-	if (stepper->_n > 0)
-	{
-	    // Currently accelerating, need to decel now? Or maybe going the wrong way?
-	    if ((stepsToStop >= distanceTo) || stepper->_direction == DIRECTION_CCW)
-	    	stepper->_n = -stepsToStop; // Start deceleration
-	}
-	else if (stepper->_n < 0)
-	{
-	    // Currently decelerating, need to accel again?
-	    if ((stepsToStop < distanceTo) && stepper->_direction == DIRECTION_CW)
-	    	stepper->_n = -stepper->_n; // Start accceleration
-	}
+			// We are anticlockwise from the target
+			// Need to go clockwise from here, maybe decelerate now
+			if (stepper->_n > 0)
+			{
+					// Currently accelerating, need to decel now? Or maybe going the wrong way?
+					if ((stepsToStop >= distanceTo) || stepper->_direction == DIRECTION_CCW)
+						stepper->_n = -stepsToStop; // Start deceleration
+			}
+			else if (stepper->_n < 0)
+			{
+					// Currently decelerating, need to accel again?
+					if ((stepsToStop < distanceTo) && stepper->_direction == DIRECTION_CW)
+						stepper->_n = -stepper->_n; // Start accceleration
+			}
     }
     else if (distanceTo < 0)
     {
-	// We are clockwise from the target
-	// Need to go anticlockwise from here, maybe decelerate
-	if (stepper->_n > 0)
-	{
-	    // Currently accelerating, need to decel now? Or maybe going the wrong way?
-	    if ((stepsToStop >= -distanceTo) || stepper->_direction == DIRECTION_CW)
-	    	stepper->_n = -stepsToStop; // Start deceleration
-	}
-	else if (stepper->_n < 0)
-	{
-	    // Currently decelerating, need to accel again?
-	    if ((stepsToStop < -distanceTo) && stepper->_direction == DIRECTION_CCW)
-	    	stepper->_n = -stepper->_n; // Start accceleration
-	}
+			// We are clockwise from the target
+			// Need to go anticlockwise from here, maybe decelerate
+			if (stepper->_n > 0)
+			{
+					// Currently accelerating, need to decel now? Or maybe going the wrong way?
+					if ((stepsToStop >= -distanceTo) || stepper->_direction == DIRECTION_CW)
+						stepper->_n = -stepsToStop; // Start deceleration
+			}
+			else if (stepper->_n < 0)
+			{
+					// Currently decelerating, need to accel again?
+					if ((stepsToStop < -distanceTo) && stepper->_direction == DIRECTION_CCW)
+						stepper->_n = -stepper->_n; // Start accceleration
+			}
     }
 
     // Need to accelerate or decelerate
@@ -275,110 +277,39 @@ float speed(AccelStepper *stepper)
 // Subclasses can override
 void step(AccelStepper *stepper, long step)
 {
-    switch (stepper->_interface)
-    {
-				case DRIVER:
-						step1(stepper, step);
-						break;
-    }
-}
+  (void)(step); // Unused
 
-long stepForward(AccelStepper *stepper)
-{
-    // Clockwise
-		stepper->_currentPos += 1;
-		step(stepper, stepper->_currentPos);
-		stepper->_lastStepTime = micros();
-    return stepper->_currentPos;
-}
-
-long stepBackward(AccelStepper *stepper)
-{
-    // Counter-clockwise
-		stepper->_currentPos -= 1;
-		step(stepper, stepper->_currentPos);
-		stepper->_lastStepTime = micros();
-    return stepper->_currentPos;
-}
-
-// You might want to override this to implement eg serial output
-// bit 0 of the mask corresponds to _pin[0]
-// bit 1 of the mask corresponds to _pin[1]
-// ....
-void setOutputPins(AccelStepper *stepper, uint8_t mask)
-{
-    uint8_t numpins = 2;
-    if (stepper->_interface == FULL4WIRE || stepper->_interface == HALF4WIRE)
-    	numpins = 4;
-    else if (stepper->_interface == FULL3WIRE || stepper->_interface == HALF3WIRE)
-    	numpins = 3;
-    uint8_t i;
-    for (i = 0; i < numpins; i++)
-    	gpioPinWrite(stepper->_pin[i], (mask & (1 << i)) ? (HIGH ^ stepper->_pinInverted[i]) : (LOW ^ stepper->_pinInverted[i]));
-}
-
-// 1 pin step function (ie for stepper drivers)
-// This is passed the current step number (0 to 7)
-// Subclasses can override
-void step1(AccelStepper *stepper, long step)
-{
-    (void)(step); // Unused
-
-    // _pin[0] is step, _pin[1] is direction
-    setOutputPins(stepper, stepper->_direction ? 0b10 : 0b00); // Set direction first else get rogue pulses
-    setOutputPins(stepper, stepper->_direction ? 0b11 : 0b01); // step HIGH
-    // Caution 200ns setup time 
-    // Delay the minimum allowed pulse width
-    delayMicroseconds(stepper->_minPulseWidth);
-    setOutputPins(stepper, stepper->_direction ? 0b10 : 0b00); // step LOW
+  if(stepper->_direction == 1)
+  {
+    gpioPinWrite(stepper->_dirPin,  _DEF_HIGH);
+    gpioPinWrite(stepper->_stepPin,  _DEF_HIGH);
+  }
+  else
+  {
+    gpioPinWrite(stepper->_dirPin,  _DEF_LOW);
+    gpioPinWrite(stepper->_stepPin,  _DEF_HIGH);
+  }
+  // Caution 200ns setup time
+  // Delay the minimum allowed pulse width
+  delayMicroseconds(stepper->_minPulseWidth);
+  gpioPinWrite(stepper->_stepPin,  _DEF_LOW);
 }
     
 // Prevents power consumption on the outputs
 void    disableOutputs(AccelStepper *stepper)
 {   
-    if (! stepper->_interface) return;
-
-    setOutputPins(stepper, 0); // Handles inversion automatically
-    if (stepper->_enablePin != 0xff)
-    {
-    	gpioPinWrite(stepper->_enablePin, LOW ^ stepper->_enableInverted);
-    }
+  gpioPinWrite(stepper->_enablePin, _DEF_HIGH);
 }
 
 void    enableOutputs(AccelStepper *stepper)
 {
-    if (! stepper->_interface)
-    	return;
-
-    if (stepper->_enablePin != 0xff)
-    {
-    	gpioPinWrite(stepper->_enablePin, HIGH ^ stepper->_enableInverted);
-    }
+  gpioPinWrite(stepper->_enablePin, _DEF_LOW);
 }
 
 void setMinPulseWidth(AccelStepper *stepper, unsigned int minWidth)
 {
 	stepper->_minPulseWidth = minWidth;
 }
-
-void setEnablePin(AccelStepper *stepper, uint8_t enablePin)
-{
-	stepper->_enablePin = enablePin;
-
-    // This happens after construction, so init pin now.
-    if (stepper->_enablePin != 0xff)
-    {
-    	gpioPinWrite(stepper->_enablePin, HIGH ^ stepper->_enableInverted);
-    }
-}
-
-void setPinsInverted(AccelStepper *stepper, bool directionInvert, bool stepInvert, bool enableInvert)
-{
-	stepper->_pinInverted[0] = stepInvert;
-	stepper->_pinInverted[1] = directionInvert;
-	stepper->_enableInverted = enableInvert;
-}
-
 
 // Blocks until the target position is reached and stopped
 void runToPosition(AccelStepper *stepper)
@@ -396,13 +327,6 @@ bool runSpeedToPosition(AccelStepper *stepper)
     else
     	stepper->_direction = DIRECTION_CCW;
     return runSpeed(stepper);
-}
-
-// Blocks until the new target position is reached
-void runToNewPosition(AccelStepper *stepper, long position)
-{
-    moveTo(stepper, position);
-    runToPosition(stepper);
 }
 
 void stop(AccelStepper *stepper)

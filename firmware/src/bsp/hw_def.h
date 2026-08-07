@@ -66,6 +66,9 @@
 #endif
 
 
+#define FAST_DATA_ZERO_INIT
+#define FAST_CODE
+
 
 #ifndef M_PI
 #define M_PI       3.14159265358979323846f

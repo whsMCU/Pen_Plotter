@@ -45,6 +45,7 @@ typedef struct _RotaryEncoder{
 
   unsigned long _positionExtTime;      // The time the last position change was detected.
   unsigned long _positionExtTimePrev;  // The time the previous position change was detected.
+
 } RotaryEncoder;
 
 void RotaryEncoder_init(LatchMode mode);

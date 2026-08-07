@@ -54,6 +54,7 @@ extern I2C_HandleTypeDef SSD1306_I2C_PORT;
 //
 uint8_t ssd1306_Init(void);
 void ssd1306_Fill(SSD1306_COLOR color);
+bool ssd1306_Update_satus(void);
 void ssd1306_UpdateScreen(void);
 void SSD1306_Clear(void);
 void ssd1306_DrawPixel(uint8_t x, uint8_t y, SSD1306_COLOR color);

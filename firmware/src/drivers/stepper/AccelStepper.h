@@ -34,8 +34,8 @@ typedef struct _AccelStepper{
 	unsigned long  _stepInterval;
 
 	uint8_t        _interface;          // 0, 1, 2, 4, 8, See MotorInterfaceType
-	uint8_t        _pin[2];
-	uint8_t        _pinInverted[2];
+	uint8_t        _stepPin;
+	uint8_t        _dirPin;
 	long           _currentPos;    // Steps
 	long           _targetPos;     // Steps
 	float          _speed;         // Steps per second
@@ -46,15 +46,13 @@ typedef struct _AccelStepper{
 	unsigned int   _minPulseWidth;
 	bool           _enableInverted;
 	uint8_t        _enablePin;
-	void (*_forward)();
-	void (*_backward)();
 	long _n;
 	float _c0;
 	float _cn;
 	float _cmin; // at max speed
 } AccelStepper;
 
-void AccelStepper_init(AccelStepper *stepper, uint8_t enPin, uint8_t stepPin, uint8_t dirPin, bool enable);
+void AccelStepper_init(AccelStepper *stepper, uint8_t enablePin, uint8_t stepPin, uint8_t dirPin, bool enable);
 
 extern AccelStepper stepperX;
 extern AccelStepper stepperY;
@@ -75,23 +73,15 @@ long    currentPosition(AccelStepper *stepper);
 void    setCurrentPosition(AccelStepper *stepper, long position);
 void    runToPosition(AccelStepper *stepper);
 bool    runSpeedToPosition(AccelStepper *stepper);
-void    runToNewPosition(AccelStepper *stepper, long position);
 void    stop(AccelStepper *stepper);
 void    disableOutputs(AccelStepper *stepper);
 void    enableOutputs(AccelStepper *stepper);
 void    setMinPulseWidth(AccelStepper *stepper, unsigned int minWidth);
-void    setEnablePin(AccelStepper *stepper, uint8_t enablePin);
-void    setPinsInverted(AccelStepper *stepper, bool directionInvert, bool stepInvert, bool enableInvert);
 bool    isRunning(AccelStepper *stepper);
 
 unsigned long  computeNewSpeed(AccelStepper *stepper);
 
 //void   setOutputPins(uint8_t mask);
 void   step(AccelStepper *stepper, long step);
-long   stepForward(AccelStepper *stepper);
-long   stepBackward(AccelStepper *stepper);
-
-void   step1(AccelStepper *stepper, long step);
-
 
 #endif 

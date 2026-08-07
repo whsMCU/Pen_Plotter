@@ -22,7 +22,7 @@ void TransferDoneISR(void)
     fps_count = 1000 / fps_time;
   }
 
-  lcd_request_draw = false;
+  //lcd_request_draw = false;
 }
 
 uint32_t SSD1306_get_fps(void)
@@ -113,24 +113,36 @@ void ssd1306_Fill(SSD1306_COLOR color)
 	}
 }
 
+bool ssd1306_Update_satus(void)
+{
+	return lcd_request_draw;
+}
+
 //
 //	Alle weizigingen in de buffer naar het scherm sturen
 //
 #define SH1106_OFFSET 2
 uint32_t screen_send_time = 0;
 uint32_t screen_send_time_tmp = 0;
+
+uint32_t screen_send_count = 0;
 void ssd1306_UpdateScreen(void) 
 {
-	uint8_t i;
 	lcd_request_draw = true;
 
-	for (i = 0; i < 8; i++) {
-		ssd1306_WriteCommand(0xB0 + i);
-		ssd1306_WriteCommand(SH1106_OFFSET & 0x0F);
-		ssd1306_WriteCommand(0x10 | (SH1106_OFFSET >> 4));
+	ssd1306_WriteCommand(0xB0 + screen_send_count);
+	ssd1306_WriteCommand(SH1106_OFFSET & 0x0F);
+	ssd1306_WriteCommand(0x10 | (SH1106_OFFSET >> 4));
 
-		// We schrijven alles map per map weg
-		HAL_I2C_Mem_Write(&hi2c1, SSD1306_I2C_ADDR, 0x40, 1, &SSD1306_Buffer[SSD1306_WIDTH * i], SSD1306_WIDTH, 100);
+	// We schrijven alles map per map weg
+	HAL_I2C_Mem_Write_IT(&hi2c1, SSD1306_I2C_ADDR, 0x40, 1, &SSD1306_Buffer[SSD1306_WIDTH * screen_send_count], SSD1306_WIDTH);
+
+	screen_send_count++;
+
+	if(screen_send_count >=7)
+	{
+		screen_send_count = 0;
+		lcd_request_draw = false;
 	}
 }
 
@@ -538,6 +550,6 @@ void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
 	if(hi2c->Instance == I2C1)
 	{
-		TransferDoneISR();
+		//TransferDoneISR();
 	}
 }

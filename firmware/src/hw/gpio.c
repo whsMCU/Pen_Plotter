@@ -200,6 +200,24 @@ uint32_t getgpioPin(uint8_t ch)
 	return gpio_tbl[ch].pin;
 }
 
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  switch(GPIO_Pin)
+  {
+      case GPIO_PIN_13:
+      		tick();
+          break;
+
+      case GPIO_PIN_14:
+      		tick();
+          break;
+
+      case GPIO_PIN_15:
+      	  disableOutputs(&stepperX);
+          break;
+  }
+}
+
 #ifdef _USE_HW_CLI
 void cliGpio(cli_args_t *args)
 {

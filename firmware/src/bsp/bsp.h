@@ -24,6 +24,8 @@ extern "C" {
 //#define logPrintf(fmt, ...)
 //#endif
 
+void cycleCounterInit(void);
+
 uint32_t getCycleCounter(void);
 
 int32_t clockCyclesToMicros(int32_t clockCycles);

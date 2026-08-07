@@ -8,6 +8,7 @@
 #ifndef SRC_HW_HW_H_
 #define SRC_HW_HW_H_
 
+#include "scheduler.h"
 #include "hw_def.h"
 #include "def.h"
 #include "bsp.h"
@@ -25,7 +26,6 @@
 #include "log.h"
 
 #include "RotaryEncoder.h"
-#include "scheduler.h"
 #include "AccelStepper.h"
 #include "MultiStepper.h"
 
