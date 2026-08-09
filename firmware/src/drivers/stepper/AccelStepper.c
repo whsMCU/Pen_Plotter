@@ -8,18 +8,27 @@
 AccelStepper stepperX;
 AccelStepper stepperY;
 
-uint32_t callback_time, callback_pretime = 0;
+uint32_t callback_time_H, callback_pretime_H = 0;
+uint32_t callback_time_L, callback_pretime_L = 0;
 
-static void TimerCallbackISR(void)
+static void TimerCallbackISR_H(void)
 {
-	callback_time = micros() - callback_pretime;
-  callback_pretime = micros();
+	callback_time_H = micros() - callback_pretime_H;
+	callback_pretime_H = micros();
+
   // Change direction at the limits
   if (distanceToGo(&stepperX) == 0)
   {
   	moveTo(&stepperX, -currentPosition(&stepperX));
   }
   run(&stepperX);
+
+}
+
+static void TimerCallbackISR_L(void)
+{
+	callback_time_L = micros() - callback_pretime_L;
+	callback_pretime_L = micros();
 
 }
 
@@ -46,7 +55,8 @@ void AccelStepper_init(AccelStepper *stepper, uint8_t enablePin, uint8_t stepPin
 	stepper->_cmin = 1.0;
 	stepper->_direction = DIRECTION_CCW;
 
-	timAttachInterrupt(_DEF_TIM2, TimerCallbackISR);
+	timAttachInterrupt(_DEF_TIM2, TimerCallbackISR_H);
+	timAttachInterrupt(_DEF_TIM3, TimerCallbackISR_L);
 
 	gpioPinWrite(stepper->_enablePin,  _DEF_LOW);
 	// Some reasonable default

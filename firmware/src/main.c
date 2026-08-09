@@ -67,6 +67,7 @@ void hwInit(void)
 
   tim_Init();
   tim_Begin(_DEF_TIM2);
+  tim_Begin(_DEF_TIM3);
   gpioInit();
   uartInit();
 
@@ -83,12 +84,12 @@ void hwInit(void)
 
   ssd1306_Init();
 
-  AccelStepper_init(&stepperX, StepX_EN, StepX_STEP, StepX_DIR, true);  //(driver type, STEP, DIR) Driver X
-  AccelStepper_init(&stepperY, StepY_EN, StepY_STEP, StepY_DIR, true);  //(driver type, STEP, DIR) Driver Y
+  AccelStepper_init(&stepperX, StepXY_EN, StepX_STEP, StepX_DIR, true);  //(driver type, STEP, DIR) Driver X
+  AccelStepper_init(&stepperY, StepXY_EN, StepY_STEP, StepY_DIR, true);  //(driver type, STEP, DIR) Driver Y
 
-  setMaxSpeed(&stepperX, 500);
-  setAcceleration(&stepperX, 500);
-  moveTo(&stepperX, 4000);
+  setMaxSpeed(&stepperX, 100);
+  setAcceleration(&stepperX, 20);
+  moveTo(&stepperX, 500);
 
 }
 

@@ -38,6 +38,7 @@ typedef struct
 tim_t tim_tbl[HW_TIM_MAX_CH];
 
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
 
 #ifdef _USE_HW_CLI
 static void cliTimer(cli_args_t *args);
@@ -96,6 +97,37 @@ bool tim_Begin(uint8_t ch)
       //logPrintf("[%s] tim5_Init()\r\n", ret ? "OK":"NG");
       break;
 
+    case _DEF_TIM3:
+      p_tim->h_tim = &htim3;
+      p_tim->func_cb = NULL;
+
+      htim3.Instance = TIM3;
+      htim3.Init.Prescaler = 71;
+      htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+      htim3.Init.Period = 99;
+      htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+      htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+      if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+      {
+        ret = false;
+      }
+      sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+      if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+      {
+        ret = false;
+      }
+      sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+      sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+      if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+      {
+        ret = false;
+      }
+
+	  p_tim->is_start = true;
+	  ret = true;
+      //logPrintf("[%s] tim5_Init()\r\n", ret ? "OK":"NG");
+      break;
+
     default:
       break;
   }
@@ -148,6 +180,21 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* tim_baseHandle)
 
 	/* USER CODE END TIM3_MspInit 1 */
 	}
+	  else if(tim_baseHandle->Instance==TIM3)
+	  {
+	  /* USER CODE BEGIN TIM3_MspInit 0 */
+
+	  /* USER CODE END TIM3_MspInit 0 */
+	    /* TIM3 clock enable */
+	    __HAL_RCC_TIM3_CLK_ENABLE();
+
+	    /* TIM3 interrupt Init */
+	    HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
+	    HAL_NVIC_EnableIRQ(TIM3_IRQn);
+	  /* USER CODE BEGIN TIM3_MspInit 1 */
+
+	  /* USER CODE END TIM3_MspInit 1 */
+	  }
 }
 
 void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
@@ -162,6 +209,20 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 
 	/* TIM3 interrupt Deinit */
   	HAL_NVIC_DisableIRQ(TIM2_IRQn);
+  /* USER CODE BEGIN TIM3_MspDeInit 1 */
+
+  /* USER CODE END TIM3_MspDeInit 1 */
+  }
+  else if(tim_baseHandle->Instance==TIM3)
+  {
+  /* USER CODE BEGIN TIM3_MspDeInit 0 */
+
+  /* USER CODE END TIM3_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_TIM3_CLK_DISABLE();
+
+    /* TIM3 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(TIM3_IRQn);
   /* USER CODE BEGIN TIM3_MspDeInit 1 */
 
   /* USER CODE END TIM3_MspDeInit 1 */

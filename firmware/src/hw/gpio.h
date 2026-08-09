@@ -24,12 +24,12 @@ enum
 	RotaryEncoder_1,
 	RotaryEncoder_2,
 	PushButton,
-	StepX_EN,
+	StepXY_EN,
 	StepX_STEP,
 	StepX_DIR,
-	StepY_EN,
 	StepY_STEP,
 	StepY_DIR,
+	emty,
 };
 
 

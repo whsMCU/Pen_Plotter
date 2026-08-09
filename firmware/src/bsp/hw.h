@@ -25,7 +25,10 @@
 #include "cli_gui.h"
 #include "log.h"
 
+#include "config.h"
 #include "RotaryEncoder.h"
+#include "planner.h"
+#include "stepper.h"
 #include "AccelStepper.h"
 #include "MultiStepper.h"
 
