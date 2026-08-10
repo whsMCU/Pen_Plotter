@@ -168,6 +168,23 @@ void gpioPinWrite(uint8_t ch, bool value)
   }
 }
 
+void gpioPinWrite_reg(uint8_t ch, bool value)
+{
+  if (ch >= GPIO_MAX_CH)
+  {
+    return;
+  }
+
+  if (value)
+  {
+    gpio_tbl[ch].port->BSRR = gpio_tbl[ch].pin;
+  }
+  else
+  {
+    gpio_tbl[ch].port->BRR = gpio_tbl[ch].pin;
+  }
+}
+
 bool gpioPinRead(uint8_t ch)
 {
   bool ret = false;

@@ -21,6 +21,9 @@
 #pragma once
 
 #include "scheduler/scheduler.h"
+#include"grbl.h"
+
+extern int32_t sys_position[N_AXIS];
 
 
 void tasksInitData(void);
