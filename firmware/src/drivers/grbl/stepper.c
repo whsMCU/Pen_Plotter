@@ -19,7 +19,7 @@
   along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "stepper.h"
+#include "grbl.h"
 
 
 // Some useful constants.
@@ -224,31 +224,20 @@ static st_prep_t prep;
 void st_wake_up()
 {
   // Enable stepper drivers.
-  if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)) {
-  	//STEPPERS_DISABLE_PORT |= (1<<STEPPERS_DISABLE_BIT);
-  	gpioPinWrite_reg(StepXY_EN, true);
-  }
-  else {
-  	//STEPPERS_DISABLE_PORT &= ~(1<<STEPPERS_DISABLE_BIT);
-  	gpioPinWrite_reg(StepXY_EN, false);
-  }
+  if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)) { STEPPERS_DISABLE_PORT |= (1<<STEPPERS_DISABLE_BIT); }
+  else { STEPPERS_DISABLE_PORT &= ~(1<<STEPPERS_DISABLE_BIT); }
 
   // Initialize stepper output bits to ensure first ISR call does not step.
   st.step_outbits = step_port_invert_mask;
 
   // Initialize step pulse timing from settings. Here to ensure updating after re-writing.
-  #ifdef STEP_PULSE_DELAY
-    // Set total step pulse time after direction pin set. Ad hoc computation from oscilloscope.
-    st.step_pulse_time = -(((settings.pulse_microseconds+STEP_PULSE_DELAY-2)*TICKS_PER_MICROSECOND) >> 3);
-    // Set delay between direction pin write and step command.
-    OCR0A = -(((settings.pulse_microseconds)*TICKS_PER_MICROSECOND) >> 3);
-  #else // Normal operation
-    // Set step pulse time. Ad hoc computation from oscilloscope. Uses two's complement.
-    st.step_pulse_time = -(((settings.pulse_microseconds-2)*TICKS_PER_MICROSECOND) >> 3);
-  #endif
+  // --- STM32 포팅: AVR의 2의보수/TCNT0 트릭 대신, TIM3(원펄스모드)의 ARR에
+  //     펄스폭(us)을 직접 마이크로초 단위로 써준다 (TIM3는 1MHz 틱으로 설정됨). ---
+  TIM3->ARR = (settings.pulse_microseconds > 0 ? settings.pulse_microseconds - 1 : 0);
 
-  // Enable Stepper Driver Interrupt
-  //TIMSK1 |= (1<<OCIE1A);
+  // Enable Stepper Driver Interrupt (TIM2 = AVR TIMER1 COMPA 대응)
+  TIM2->CNT = 0;
+  TIM2->DIER |= TIM_DIER_UIE;
   TIM2->CR1 |= TIM_CR1_CEN;
 }
 
@@ -257,9 +246,9 @@ void st_wake_up()
 void st_go_idle()
 {
   // Disable Stepper Driver Interrupt. Allow Stepper Port Reset Interrupt to finish, if active.
-  //TIMSK1 &= ~(1<<OCIE1A); // Disable Timer1 interrupt
+  // --- STM32 포팅: TIM2(스텝 주기 타이머) 인터럽트/카운터 정지 ---
+  TIM2->DIER &= ~TIM_DIER_UIE;
   TIM2->CR1 &= ~TIM_CR1_CEN;
-  //TCCR1B = (TCCR1B & ~((1<<CS12) | (1<<CS11))) | (1<<CS10); // Reset clock to no prescaling.
   busy = false;
 
   // Set stepper driver idle state, disabled or enabled, depending on settings and circumstances.
@@ -271,14 +260,8 @@ void st_go_idle()
     pin_state = true; // Override. Disable steppers.
   }
   if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)) { pin_state = !pin_state; } // Apply pin invert.
-  if (pin_state) {
-  	//STEPPERS_DISABLE_PORT |= (1<<STEPPERS_DISABLE_BIT);
-  	gpioPinWrite_reg(StepXY_EN, true);
-  }
-  else {
-  	//STEPPERS_DISABLE_PORT &= ~(1<<STEPPERS_DISABLE_BIT);
-  	gpioPinWrite_reg(StepXY_EN, false);
-  }
+  if (pin_state) { STEPPERS_DISABLE_PORT |= (1<<STEPPERS_DISABLE_BIT); }
+  else { STEPPERS_DISABLE_PORT &= ~(1<<STEPPERS_DISABLE_BIT); }
 }
 
 
@@ -330,13 +313,14 @@ void st_go_idle()
 // TODO: Replace direct updating of the int32 position counters in the ISR somehow. Perhaps use smaller
 // int8 variables and update position counters only when a segment completes. This can get complicated
 // with probing and homing cycles that require true real-time positions.
-void Timer2CallbackISR(void)
+ISR(TIMER1_COMPA_vect)
 {
+  TIM2->SR &= ~TIM_SR_UIF; // STM32는 AVR과 달리 인터럽트 플래그를 소프트웨어로 직접 지워야 함
+
   if (busy) { return; } // The busy-flag is used to avoid reentering this interrupt
 
   // Set the direction pins a couple of nanoseconds before we step the steppers
   DIRECTION_PORT = (DIRECTION_PORT & ~DIRECTION_MASK) | (st.dir_outbits & DIRECTION_MASK);
-
   #ifdef ENABLE_DUAL_AXIS
     DIRECTION_PORT_DUAL = (DIRECTION_PORT_DUAL & ~DIRECTION_MASK_DUAL) | (st.dir_outbits_dual & DIRECTION_MASK_DUAL);
   #endif
@@ -356,8 +340,9 @@ void Timer2CallbackISR(void)
 
   // Enable step pulse reset timer so that The Stepper Port Reset Interrupt can reset the signal after
   // exactly settings.pulse_microseconds microseconds, independent of the main Timer1 prescaler.
-  TCNT0 = st.step_pulse_time; // Reload Timer0 counter
-  TCCR0B = (1<<CS01); // Begin Timer0. Full speed, 1/8 prescaler
+  // --- STM32 포팅: TIM3(원펄스모드)를 0부터 재시작. ARR(펄스폭)은 st_wake_up()에서 이미 설정됨 ---
+  TIM3->CNT = 0;
+  TIM3->CR1 |= TIM_CR1_CEN;
 
   busy = true;
   sei(); // Re-enable interrupts to allow Stepper Port Reset Interrupt to fire on-time.
@@ -503,6 +488,8 @@ void Timer2CallbackISR(void)
 // completing one step cycle.
 ISR(TIMER0_OVF_vect)
 {
+  TIM3->SR &= ~TIM_SR_UIF; // STM32는 인터럽트 플래그를 소프트웨어로 직접 지워야 함
+
   // Reset stepping pins (leave the direction pins)
   STEP_PORT = (STEP_PORT & ~STEP_MASK) | (step_port_invert_mask & STEP_MASK);
   #ifdef ENABLE_DUAL_AXIS
@@ -581,31 +568,14 @@ void st_reset()
 void stepper_init()
 {
   // Configure step and direction interface pins
+  // --- STM32 포팅: 실제 GPIO 출력모드 설정은 main()의 stm32_board_gpio_init()에서 이미 처리됨.
+  //     STEP_DDR 등은 더미 매크로라 아래 세 줄은 부작용 없음(원본 구조 유지용으로 남겨둠). ---
   STEP_DDR |= STEP_MASK;
   STEPPERS_DISABLE_DDR |= 1<<STEPPERS_DISABLE_BIT;
   DIRECTION_DDR |= DIRECTION_MASK;
-  
-  #ifdef ENABLE_DUAL_AXIS
-    STEP_DDR_DUAL |= STEP_MASK_DUAL;
-    DIRECTION_DDR_DUAL |= DIRECTION_MASK_DUAL;
-  #endif
 
-  // Configure Timer 1: Stepper Driver Interrupt
-  TCCR1B &= ~(1<<WGM13); // waveform generation = 0100 = CTC
-  TCCR1B |=  (1<<WGM12);
-  TCCR1A &= ~((1<<WGM11) | (1<<WGM10));
-  TCCR1A &= ~((1<<COM1A1) | (1<<COM1A0) | (1<<COM1B1) | (1<<COM1B0)); // Disconnect OC1 output
-  // TCCR1B = (TCCR1B & ~((1<<CS12) | (1<<CS11))) | (1<<CS10); // Set in st_go_idle().
-  // TIMSK1 &= ~(1<<OCIE1A);  // Set in st_go_idle().
-
-  // Configure Timer 0: Stepper Port Reset Interrupt
-  TIMSK0 &= ~((1<<OCIE0B) | (1<<OCIE0A) | (1<<TOIE0)); // Disconnect OC0 outputs and OVF interrupt.
-  TCCR0A = 0; // Normal operation
-  TCCR0B = 0; // Disable Timer0 until needed
-  TIMSK0 |= (1<<TOIE0); // Enable Timer0 overflow interrupt
-  #ifdef STEP_PULSE_DELAY
-    TIMSK0 |= (1<<OCIE0A); // Enable Timer0 Compare Match A interrupt
-  #endif
+  // --- STM32 포팅: AVR Timer1(CTC)/Timer0 레지스터 설정을 TIM2/TIM3 실제 초기화로 대체 ---
+  stm32_stepper_timer_init();
 }
 
 

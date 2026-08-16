@@ -18,7 +18,7 @@
   along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "coolant_control.h"
+#include "grbl.h"
 
 
 void coolant_init()

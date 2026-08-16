@@ -21,8 +21,6 @@
 #ifndef coolant_control_h
 #define coolant_control_h
 
-#include "hw.h"
-
 #define COOLANT_NO_SYNC     false
 #define COOLANT_FORCE_SYNC  true
 

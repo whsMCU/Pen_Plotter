@@ -1,163 +1,153 @@
 /*
-  cpu_map.h - CPU and pin mapping configuration file
-  Part of Grbl
+  stm32_port.h - STM32F103C8T6 (Blue Pill) 핀/레지스터 매핑
+  원본 cpu_map.h는 CPU_MAP_ATMEGA328P가 정의되지 않으면 내용이 비므로,
+  이 파일이 사실상 STM32용 cpu_map.h 역할을 합니다.
 
-  Copyright (c) 2012-2016 Sungeun K. Jeon for Gnea Research LLC
+  설계 원칙: AVR은 PORT/PIN 레지스터를 직접 비트연산(|=, &=, ^=)하는 스타일이라,
+  STEP_PORT 같은 매크로를 GPIOx->ODR(출력)/IDR(입력)에 그대로 매핑하면
+  stepper.c, limits.c, system.c, probe.c, coolant_control.c, spindle_control.c
+  원본 코드를 거의 수정 없이 재사용할 수 있습니다.
 
-  Grbl is free software: you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
-
-  Grbl is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
+  핀 배치
+  ─────────────────────────────────────────
+  GPIOA
+    PA0 X_STEP   PA1 X_DIR
+    PA2 Y_STEP   PA3 Y_DIR
+    PA4 Z_STEP   PA5 Z_DIR
+    PA6 STEPPERS_DISABLE
+    PA9 USART1_TX  PA10 USART1_RX
+  GPIOB
+    PB0 X_LIMIT  PB1 Y_LIMIT  PB2 Z_LIMIT
+    PB3 SPINDLE_ENABLE   PB4 SPINDLE_DIRECTION
+    PB8 SPINDLE_PWM (TIM4_CH3)
+    PB14 COOLANT_FLOOD    PB15 COOLANT_MIST
+    PB9 RESET  PB10 FEED_HOLD  PB11 CYCLE_START  PB12 SAFETY_DOOR
+    PB13 PROBE
+  ─────────────────────────────────────────
 */
+#ifndef stm32_port_h
+#define stm32_port_h
 
-/* The cpu_map.h files serve as a central pin mapping selection file for different
-   processor types or alternative pin layouts. This version of Grbl officially supports
-   only the Arduino Mega328p. */
+#ifdef CPU_MAP_STM32F103
 
+/* DDR(방향 설정) 역할을 하는 줄들은 실제 GPIO 모드(CRL/CRH) 설정을
+   stm32_hal.c의 stm32_board_gpio_init()에서 한 번에 처리하므로 여기서는
+   부작용 없는 더미 변수로 흡수합니다. */
+extern volatile uint32_t stm32_dummy_reg;
+#define DUMMY_REG stm32_dummy_reg
 
-#ifndef cpu_map_h
-#define cpu_map_h
+/* ================= STEP / DIRECTION / STEPPERS_DISABLE (GPIOA) ================= */
+#define STEP_DDR        DUMMY_REG
+#define STEP_PORT       (GPIOA->ODR)
+#define X_STEP_BIT      0
+#define Y_STEP_BIT      2
+#define Z_STEP_BIT      4
+#define STEP_MASK       ((1<<X_STEP_BIT)|(1<<Y_STEP_BIT)|(1<<Z_STEP_BIT))
 
+#define DIRECTION_DDR    DUMMY_REG
+#define DIRECTION_PORT   (GPIOA->ODR)
+#define X_DIRECTION_BIT  1
+#define Y_DIRECTION_BIT  3
+#define Z_DIRECTION_BIT  5
+#define DIRECTION_MASK   ((1<<X_DIRECTION_BIT)|(1<<Y_DIRECTION_BIT)|(1<<Z_DIRECTION_BIT))
 
-// Define serial port pins and interrupt vectors.
-#define SERIAL_RX     USART_RX_vect
-#define SERIAL_UDRE   USART_UDRE_vect
-
-// Define step pulse output pins. NOTE: All step bit pins must be on the same port.
-#define STEP_DDR        DDRD
-#define STEP_PORT       PORTD
-#define X_STEP_BIT      2  // Uno Digital Pin 2
-#define Y_STEP_BIT      3  // Uno Digital Pin 3
-#define Z_STEP_BIT      4  // Uno Digital Pin 4
-#define STEP_MASK       ((1<<X_STEP_BIT)|(1<<Y_STEP_BIT)|(1<<Z_STEP_BIT)) // All step bits
-
-// Define step direction output pins. NOTE: All direction pins must be on the same port.
-#define DIRECTION_DDR     DDRD
-#define DIRECTION_PORT    PORTD
-#define X_DIRECTION_BIT   5  // Uno Digital Pin 5
-#define Y_DIRECTION_BIT   6  // Uno Digital Pin 6
-#define Z_DIRECTION_BIT   7  // Uno Digital Pin 7
-#define DIRECTION_MASK    ((1<<X_DIRECTION_BIT)|(1<<Y_DIRECTION_BIT)|(1<<Z_DIRECTION_BIT)) // All direction bits
-
-// Define stepper driver enable/disable output pin.
-#define STEPPERS_DISABLE_DDR    DDRB
-#define STEPPERS_DISABLE_PORT   PORTB
-#define STEPPERS_DISABLE_BIT    0  // Uno Digital Pin 8
+#define STEPPERS_DISABLE_DDR    DUMMY_REG
+#define STEPPERS_DISABLE_PORT   (GPIOA->ODR)
+#define STEPPERS_DISABLE_BIT    6
 #define STEPPERS_DISABLE_MASK   (1<<STEPPERS_DISABLE_BIT)
 
-// Define homing/hard limit switch input pins and limit interrupt vectors.
-// NOTE: All limit bit pins must be on the same port, but not on a port with other input pins (CONTROL).
-#define LIMIT_DDR        DDRB
-#define LIMIT_PIN        PINB
-#define LIMIT_PORT       PORTB
-#define X_LIMIT_BIT      1  // Uno Digital Pin 9
-#define Y_LIMIT_BIT      2  // Uno Digital Pin 10
-#ifdef VARIABLE_SPINDLE // Z Limit pin and spindle enabled swapped to access hardware PWM on Pin 11.
-#define Z_LIMIT_BIT	   4 // Uno Digital Pin 12
-#else
-#define Z_LIMIT_BIT    3  // Uno Digital Pin 11
-#endif
-#if !defined(ENABLE_DUAL_AXIS)
-#define LIMIT_MASK     ((1<<X_LIMIT_BIT)|(1<<Y_LIMIT_BIT)|(1<<Z_LIMIT_BIT)) // All limit bits
-#endif
-#define LIMIT_INT        PCIE0  // Pin change interrupt enable pin
-#define LIMIT_INT_vect   PCINT0_vect
-#define LIMIT_PCMSK      PCMSK0 // Pin change interrupt register
+/* ================= LIMIT SWITCHES (GPIOB, EXTI0/1/2) ================= */
+#define LIMIT_DDR        DUMMY_REG
+#define LIMIT_PIN        (GPIOB->IDR)
+#define LIMIT_PORT       (GPIOB->ODR)
+#define X_LIMIT_BIT      0
+#define Y_LIMIT_BIT      1
+#define Z_LIMIT_BIT      2
+#define LIMIT_MASK       ((1<<X_LIMIT_BIT)|(1<<Y_LIMIT_BIT)|(1<<Z_LIMIT_BIT))
+#define LIMIT_INT        0                    /* AVR의 "그룹 인터럽트 enable"에 대응 없음 -> 더미 */
+#define LIMIT_INT_vect   limit_pin_isr_body    /* ISR(LIMIT_INT_vect) -> void limit_pin_isr_body(void) */
+#define LIMIT_PCMSK      (EXTI->IMR)           /* EXTI 라인 번호 = GPIO 핀 번호이므로 마스크 그대로 사용 가능 */
 
-// Define user-control controls (cycle start, reset, feed hold) input pins.
-// NOTE: All CONTROLs pins must be on the same port and not on a port with other input pins (limits).
-#define CONTROL_DDR       DDRC
-#define CONTROL_PIN       PINC
-#define CONTROL_PORT      PORTC
-#define CONTROL_RESET_BIT         0  // Uno Analog Pin 0
-#define CONTROL_FEED_HOLD_BIT     1  // Uno Analog Pin 1
-#define CONTROL_CYCLE_START_BIT   2  // Uno Analog Pin 2
-#define CONTROL_SAFETY_DOOR_BIT   1  // Uno Analog Pin 1 NOTE: Safety door is shared with feed hold. Enabled by config define.
-#define CONTROL_INT       PCIE1  // Pin change interrupt enable pin
-#define CONTROL_INT_vect  PCINT1_vect
-#define CONTROL_PCMSK     PCMSK1 // Pin change interrupt register
-#define CONTROL_MASK      ((1<<CONTROL_RESET_BIT)|(1<<CONTROL_FEED_HOLD_BIT)|(1<<CONTROL_CYCLE_START_BIT)|(1<<CONTROL_SAFETY_DOOR_BIT))
-#define CONTROL_INVERT_MASK   CONTROL_MASK // May be re-defined to only invert certain control pins.
+/* ================= CONTROL PINS: RESET/FEED_HOLD/CYCLE_START/DOOR (GPIOB, EXTI9~12) ========= */
+#define CONTROL_DDR       DUMMY_REG
+#define CONTROL_PIN        (GPIOB->IDR)
+#define CONTROL_PORT       (GPIOB->ODR)
+#define CONTROL_RESET_BIT         9
+#define CONTROL_FEED_HOLD_BIT     10
+#define CONTROL_CYCLE_START_BIT   11
+#define CONTROL_SAFETY_DOOR_BIT   12
+#define CONTROL_INT        0
+#define CONTROL_INT_vect   control_pin_isr_body
+#define CONTROL_PCMSK      (EXTI->IMR)
+#define CONTROL_MASK       ((1<<CONTROL_RESET_BIT)|(1<<CONTROL_FEED_HOLD_BIT)|(1<<CONTROL_CYCLE_START_BIT)|(1<<CONTROL_SAFETY_DOOR_BIT))
+#define CONTROL_INVERT_MASK  CONTROL_MASK
 
-// Define probe switch input pin.
-#define PROBE_DDR       DDRC
-#define PROBE_PIN       PINC
-#define PROBE_PORT      PORTC
-#define PROBE_BIT       5  // Uno Analog Pin 5
-#define PROBE_MASK      (1<<PROBE_BIT)
+#define PCICR  DUMMY_REG   /* AVR PCICR(그룹 인터럽트 enable) 대응 없음 -> 더미 */
 
-#if !defined(ENABLE_DUAL_AXIS)
+/* ================= PROBE (GPIOB) ================= */
+#define PROBE_DDR   DUMMY_REG
+#define PROBE_PIN   (GPIOB->IDR)
+#define PROBE_PORT  (GPIOB->ODR)
+#define PROBE_BIT   13
+#define PROBE_MASK  (1<<PROBE_BIT)
 
-// Define flood and mist coolant enable output pins.
-#define COOLANT_FLOOD_DDR   DDRC
-#define COOLANT_FLOOD_PORT  PORTC
-#define COOLANT_FLOOD_BIT   3  // Uno Analog Pin 3
-#define COOLANT_MIST_DDR   DDRC
-#define COOLANT_MIST_PORT  PORTC
-#define COOLANT_MIST_BIT   4  // Uno Analog Pin 4
+/* ================= COOLANT (GPIOB) ================= */
+#define COOLANT_FLOOD_DDR   DUMMY_REG
+#define COOLANT_FLOOD_PORT  (GPIOB->ODR)
+#define COOLANT_FLOOD_BIT   14
+#define COOLANT_MIST_DDR    DUMMY_REG
+#define COOLANT_MIST_PORT   (GPIOB->ODR)
+#define COOLANT_MIST_BIT    15
 
-// Define spindle enable and spindle direction output pins.
-#define SPINDLE_ENABLE_DDR    DDRB
-#define SPINDLE_ENABLE_PORT   PORTB
-// Z Limit pin and spindle PWM/enable pin swapped to access hardware PWM on Pin 11.
-#ifdef VARIABLE_SPINDLE
-	#ifdef USE_SPINDLE_DIR_AS_ENABLE_PIN
-		// If enabled, spindle direction pin now used as spindle enable, while PWM remains on D11.
-		#define SPINDLE_ENABLE_BIT    5  // Uno Digital Pin 13 (NOTE: D13 can't be pulled-high input due to LED.)
-	#else
-		#define SPINDLE_ENABLE_BIT    3  // Uno Digital Pin 11
-	#endif
-#else
-	#define SPINDLE_ENABLE_BIT    4  // Uno Digital Pin 12
-#endif
-#ifndef USE_SPINDLE_DIR_AS_ENABLE_PIN
-	#define SPINDLE_DIRECTION_DDR   DDRB
-	#define SPINDLE_DIRECTION_PORT  PORTB
-	#define SPINDLE_DIRECTION_BIT   5  // Uno Digital Pin 13 (NOTE: D13 can't be pulled-high input due to LED.)
-#endif
+/* ================= SPINDLE ENABLE/DIRECTION (GPIOB) + PWM (TIM4 CH1) ================= */
+#define SPINDLE_ENABLE_DDR    DUMMY_REG
+#define SPINDLE_ENABLE_PORT   (GPIOB->ODR)
+#define SPINDLE_ENABLE_BIT    3
+#define SPINDLE_DIRECTION_DDR    DUMMY_REG
+#define SPINDLE_DIRECTION_PORT   (GPIOB->ODR)
+#define SPINDLE_DIRECTION_BIT    4
 
-// Variable spindle configuration below. Do not change unless you know what you are doing.
-// NOTE: Only used when variable spindle is enabled.
-#define SPINDLE_PWM_MAX_VALUE     255 // Don't change. 328p fast PWM mode fixes top value as 255.
+/* TIM4 ARR=999로 1000단계 PWM (stm32_hal.c의 stm32_spindle_pwm_init()과 반드시 일치) */
+#define SPINDLE_PWM_MAX_VALUE     999
 #ifndef SPINDLE_PWM_MIN_VALUE
-	#define SPINDLE_PWM_MIN_VALUE   1   // Must be greater than zero.
+  #define SPINDLE_PWM_MIN_VALUE   1
 #endif
 #define SPINDLE_PWM_OFF_VALUE     0
 #define SPINDLE_PWM_RANGE         (SPINDLE_PWM_MAX_VALUE-SPINDLE_PWM_MIN_VALUE)
-#define SPINDLE_TCCRA_REGISTER    TCCR2A
-#define SPINDLE_TCCRB_REGISTER    TCCR2B
-#define SPINDLE_OCR_REGISTER      OCR2A
-#define SPINDLE_COMB_BIT          COM2A1
 
-// Prescaled, 8-bit Fast PWM mode.
-#define SPINDLE_TCCRA_INIT_MASK   ((1<<WGM20) | (1<<WGM21))  // Configures fast PWM mode.
-// #define SPINDLE_TCCRB_INIT_MASK   (1<<CS20)               // Disable prescaler -> 62.5kHz
-// #define SPINDLE_TCCRB_INIT_MASK   (1<<CS21)               // 1/8 prescaler -> 7.8kHz (Used in v0.9)
-// #define SPINDLE_TCCRB_INIT_MASK   ((1<<CS21) | (1<<CS20)) // 1/32 prescaler -> 1.96kHz
-#define SPINDLE_TCCRB_INIT_MASK      (1<<CS22)               // 1/64 prescaler -> 0.98kHz (J-tech laser)
+#define SPINDLE_TCCRA_REGISTER    (TIM4->CCER)   /* CC1E 비트 on/off = PWM 채널 연결/해제 (AVR COM 비트와 동일 역할) */
+#define SPINDLE_TCCRB_REGISTER    DUMMY_REG       /* 실제 타이머 base 설정은 stm32_hal.c에서 1회 수행 */
+#define SPINDLE_OCR_REGISTER      (TIM4->CCR1)    /* PWM duty 레지스터 */
+#define SPINDLE_COMB_BIT          0                /* TIM4->CCER 의 CC1E 비트 위치 */
+#define SPINDLE_TCCRA_INIT_MASK   0
+#define SPINDLE_TCCRB_INIT_MASK   0
 
-// NOTE: On the 328p, these must be the same as the SPINDLE_ENABLE settings.
-#define SPINDLE_PWM_DDR   DDRB
-#define SPINDLE_PWM_PORT  PORTB
-#define SPINDLE_PWM_BIT   3    // Uno Digital Pin 11
-  
+#define SPINDLE_PWM_DDR    DUMMY_REG
+#define SPINDLE_PWM_PORT   (GPIOB->ODR)
+#define SPINDLE_PWM_BIT    6
 
-#endif
+/* ================= 타이머 레지스터 매핑 (stepper.c ISR 등에서 그대로 사용) ================= */
+#define OCR1A    (TIM2->ARR)   /* 다음 세그먼트의 스텝 주기 (TIM2 = AVR TIMER1 대응) */
+#define TCCR0B   DUMMY_REG      /* TIMER0_OVF_vect 안의 "TCCR0B=0"은 TIM3 원펄스모드가 알아서 처리하므로 더미 */
 
-/*
-#ifdef CPU_MAP_CUSTOM_PROC
-  // For a custom pin map or different processor, copy and edit one of the available cpu
-  // map files and modify it to your needs. Make sure the defined name is also changed in
-  // the config.h file.
-#endif
-*/
+/* ISR(TIMER1_COMPA_vect) / ISR(TIMER0_OVF_vect) -> 실제 NVIC 벡터 이름과 정확히 일치해야
+   시작코드(startup_stm32f103xb.s)의 벡터 테이블이 자동으로 연결됨 */
+#define TIMER1_COMPA_vect  TIM2_IRQHandler
+#define TIMER0_OVF_vect    TIM3_IRQHandler
 
+/* ================= 시리얼 (USART1) ================= */
+#define SERIAL_RX     usart1_rx_complete_isr    /* ISR(SERIAL_RX)   -> void usart1_rx_complete_isr(void) */
+#define SERIAL_UDRE   usart1_udr_empty_isr      /* ISR(SERIAL_UDRE) -> void usart1_udr_empty_isr(void) */
+#define UDR0          (USART1->DR)
+#define UCSR0B        (USART1->CR1)
+#define UDRIE0        7                          /* USART_CR1의 TXEIE 비트 위치 */
+
+/* ================= 하드웨어 초기화 함수 (stm32_hal.c 구현, main.c/stepper.c에서 호출) ========= */
+void stm32_clock_config(void);
+void stm32_board_gpio_init(void);
+void stm32_exti_init(void);
+void stm32_stepper_timer_init(void);
+void stm32_spindle_pwm_init(void);
+
+#endif // CPU_MAP_STM32F103
 #endif

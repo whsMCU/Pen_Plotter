@@ -27,7 +27,7 @@
 
 #ifndef config_h
 #define config_h
-#include "hw.h" // For Arduino IDE compatibility.
+#include "grbl.h" // For Arduino IDE compatibility.
 
 
 // Define CPU pin map and default settings.
@@ -35,7 +35,7 @@
 // one configuration file by placing their specific defaults and pin map at the bottom of this file.
 // If doing so, simply comment out these two defines and see instructions below.
 #define DEFAULTS_GENERIC
-#define CPU_MAP_ATMEGA328P // Arduino Uno CPU
+#define CPU_MAP_STM32F103 // Blue Pill (STM32F103C8T6) - see stm32_port.h
 
 // Serial baud rate
 // #define BAUD_RATE 230400

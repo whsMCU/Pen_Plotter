@@ -20,16 +20,9 @@ extern "C" {
 
 enum
 {
-	LED,
 	RotaryEncoder_1,
 	RotaryEncoder_2,
 	PushButton,
-	StepXY_EN,
-	StepX_STEP,
-	StepX_DIR,
-	StepY_STEP,
-	StepY_DIR,
-	emty,
 };
 
 

@@ -7,6 +7,7 @@
 
 
 #include "gpio.h"
+#include "grbl.h"
 
 #ifdef _USE_HW_GPIO
 
@@ -23,18 +24,9 @@ typedef struct
 
 const gpio_tbl_t gpio_tbl[GPIO_MAX_CH] =
 {
-	{GPIOB, GPIO_PIN_2,  _DEF_OUTPUT,   		GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_HIGH}, //  0. LED
-	{GPIOC, GPIO_PIN_13,  _DEF_INPUT_IT_RF,  	GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  1. RotaryEncoder_1
-	{GPIOC, GPIO_PIN_14,  _DEF_INPUT_IT_RF,   	GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  2. RotaryEncoder_2
-	{GPIOC, GPIO_PIN_15,  _DEF_INPUT_IT_RISING, GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  3. Push_button
-
-	{GPIOA, GPIO_PIN_0,  _DEF_OUTPUT,   		GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_HIGH}, //  4. StepXY_EN
-	{GPIOA, GPIO_PIN_1,  _DEF_OUTPUT,   		GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  5. StepX_STEP
-	{GPIOA, GPIO_PIN_2,  _DEF_OUTPUT,   		GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  6. StepX_DIR
-
-	{GPIOA, GPIO_PIN_3,  _DEF_OUTPUT,   		GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW}, //  7. StepY_STEP
-	{GPIOA, GPIO_PIN_4,  _DEF_OUTPUT,   		GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  8. StepY_DIR
-	{GPIOA, GPIO_PIN_5,  _DEF_OUTPUT,   		GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  9.
+	{GPIOC, GPIO_PIN_13,  _DEF_INPUT_IT_RF,  	  GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  0. RotaryEncoder_1
+	{GPIOC, GPIO_PIN_14,  _DEF_INPUT_IT_RF,   	GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  1. RotaryEncoder_2
+	{GPIOC, GPIO_PIN_15,  _DEF_INPUT_IT_RISING, GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  2. Push_button
 };
 
 
@@ -52,19 +44,66 @@ bool gpioInit(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /*Configure GPIO pin Output Level */
-  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-
-
   for (int i=0; i<GPIO_MAX_CH; i++)
   {
-    gpioPinMode(i, gpio_tbl[i].mode);
-    gpioPinWrite(i, gpio_tbl[i].init_value);
+  	gpioPinMode(i, gpio_tbl[i].mode);
+  	gpioPinWrite(i, gpio_tbl[i].init_value);
   }
 
+  GPIO_InitTypeDef gi = {0};
+
+  // --- STEP / DIRECTION / STEPPERS_DISABLE : GPIOA 출력 ---
+  gi.Pin = (1<<X_STEP_BIT)|(1<<Y_STEP_BIT)|(1<<Z_STEP_BIT)
+         | (1<<X_DIRECTION_BIT)|(1<<Y_DIRECTION_BIT)|(1<<Z_DIRECTION_BIT)
+         | (1<<STEPPERS_DISABLE_BIT);
+  gi.Mode = GPIO_MODE_OUTPUT_PP;
+  gi.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOA, &gi);
+
+  // --- USART1 TX(PA9) ---
+  gi.Pin = GPIO_PIN_9;
+  gi.Mode = GPIO_MODE_AF_PP;
+  gi.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOA, &gi);
+
+  // --- USART1 RX(PA10) ---
+  gi.Pin = GPIO_PIN_10;
+  gi.Mode = GPIO_MODE_INPUT;
+  gi.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &gi);
+
+  // --- SPINDLE_ENABLE(PB3) / SPINDLE_DIRECTION(PB4) / COOLANT(PB7,PB8) : GPIOB 출력 ---
+  gi.Pin = (1<<SPINDLE_ENABLE_BIT)|(1<<SPINDLE_DIRECTION_BIT)
+         | (1<<COOLANT_FLOOD_BIT)|(1<<COOLANT_MIST_BIT);
+  gi.Mode = GPIO_MODE_OUTPUT_PP;
+  gi.Pull = GPIO_NOPULL;
+  gi.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &gi);
+
+  // --- SPINDLE_PWM(PB6, TIM4_CH1) : AF 출력 ---
+  gi.Pin = (1<<SPINDLE_PWM_BIT);
+  gi.Mode = GPIO_MODE_AF_PP;
+  gi.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOB, &gi);
+
+  // --- LIMIT(PB0,1,2) / CONTROL(PB9~12) : 입력, 풀업, 양쪽 엣지 인터럽트 ---
+  gi.Pin = LIMIT_MASK | CONTROL_MASK;
+  gi.Mode = GPIO_MODE_IT_RISING_FALLING;
+  gi.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &gi);
+
+  // --- PROBE(PB13) : 입력, 풀업, 폴링만 함(인터럽트 불필요) ---
+  gi.Pin = (1<<PROBE_BIT);
+  gi.Mode = GPIO_MODE_INPUT;
+  gi.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &gi);
+
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 3, 0);      HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 3, 0);      HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+  HAL_NVIC_SetPriority(EXTI2_IRQn, 3, 0);      HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 3, 0);    HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 3, 0);  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 #ifdef _USE_HW_CLI
   cliAdd("gpio", cliGpio);

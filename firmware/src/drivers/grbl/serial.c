@@ -64,21 +64,15 @@ uint8_t serial_get_tx_buffer_count()
 
 void serial_init()
 {
-  // Set baud rate
-  #if BAUD_RATE < 57600
-    uint16_t UBRR0_value = ((F_CPU / (8L * BAUD_RATE)) - 1)/2 ;
-    UCSR0A &= ~(1 << U2X0); // baud doubler off  - Only needed on Uno XXX
-  #else
-    uint16_t UBRR0_value = ((F_CPU / (4L * BAUD_RATE)) - 1)/2;
-    UCSR0A |= (1 << U2X0);  // baud doubler on for high baud rates, i.e. 115200
-  #endif
-  UBRR0H = UBRR0_value >> 8;
-  UBRR0L = UBRR0_value;
+  // --- STM32 포팅: USART1(PA9=TX, PA10=RX), APB2=72MHz 기준 ---
+  // GPIO AF 모드 설정은 stm32_board_gpio_init()에서 이미 처리됨.
+  __HAL_RCC_USART1_CLK_ENABLE();
 
-  // enable rx, tx, and interrupt on complete reception of a byte
-  UCSR0B |= (1<<RXEN0 | 1<<TXEN0 | 1<<RXCIE0);
+  USART1->BRR = (uint16_t)(( (72000000UL) + (BAUD_RATE/2U) ) / BAUD_RATE); // APB2=72MHz, oversampling 16
+  USART1->CR1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE | USART_CR1_RXNEIE;
 
-  // defaults to 8-bit, no parity, 1 stop bit
+  HAL_NVIC_SetPriority(USART1_IRQn, 3, 0);
+  HAL_NVIC_EnableIRQ(USART1_IRQn);
 }
 
 
@@ -162,7 +156,7 @@ ISR(SERIAL_RX)
             }
             break; 
           #ifdef DEBUG
-            case CMD_DEBUG_REPORT: {uint8_t sreg = SREG; cli(); bit_true(sys_rt_exec_debug,EXEC_DEBUG_REPORT); SREG = sreg;} break;
+            case CMD_DEBUG_REPORT: {uint32_t sreg = __get_PRIMASK(); cli(); bit_true(sys_rt_exec_debug,EXEC_DEBUG_REPORT); __set_PRIMASK(sreg);} break;
           #endif
           case CMD_FEED_OVR_RESET: system_set_exec_motion_override_flag(EXEC_FEED_OVR_RESET); break;
           case CMD_FEED_OVR_COARSE_PLUS: system_set_exec_motion_override_flag(EXEC_FEED_OVR_COARSE_PLUS); break;

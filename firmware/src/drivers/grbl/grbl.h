@@ -25,20 +25,16 @@
 #define GRBL_VERSION "1.1h"
 #define GRBL_VERSION_BUILD "20190825"
 
-#define F_CPU 72000000UL
-
 // Define standard libraries used by Grbl.
-//#include <avr/io.h>
-//#include <avr/pgmspace.h>
-//#include <avr/interrupt.h>
-//#include <avr/wdt.h>
-//#include <util/delay.h>
-//#include <math.h>
-//#include <inttypes.h>
-//#include <string.h>
-//#include <stdlib.h>
-//#include <stdint.h>
-//#include <stdbool.h>
+// --- STM32F103 포팅: AVR 전용 헤더(avr/io.h 등)를 STM32 HAL + 호환 매크로로 대체 ---
+#include "stm32f1xx_hal.h"
+#include "avr_compat.h"     // sei/cli, _delay_ms/us, PROGMEM, PSTR, F_CPU, ISR() 등 매크로 셰임
+#include <math.h>
+#include <inttypes.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 // Define the Grbl system include files. NOTE: Do not alter organization.
 #include "config.h"
@@ -48,20 +44,20 @@
 #include "defaults.h"
 #include "cpu_map.h"
 #include "planner.h"
-//#include "coolant_control.h"
-//#include "eeprom.h"
-//#include "gcode.h"
-//#include "limits.h"
-//#include "motion_control.h"
+#include "coolant_control.h"
+#include "eeprom.h"
+#include "gcode.h"
+#include "limits.h"
+#include "motion_control.h"
 #include "planner.h"
-//#include "print.h"
-//#include "probe.h"
-//#include "protocol.h"
-//#include "report.h"
-//#include "serial.h"
-//#include "spindle_control.h"
+#include "print.h"
+#include "probe.h"
+#include "protocol.h"
+#include "report.h"
+#include "serial.h"
+#include "spindle_control.h"
 #include "stepper.h"
-//#include "jog.h"
+#include "jog.h"
 
 // ---------------------------------------------------------------------------------------
 // COMPILE-TIME ERROR CHECKING OF DEFINE VALUES:
