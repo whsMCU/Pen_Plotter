@@ -9,7 +9,7 @@
 */
 #include "grbl.h"
 
-#define EEPROM_PAGE_ADDR   0x0800FC00UL   /* STM32F103C8 64KB 플래시의 마지막 1KB 페이지 */
+#define EEPROM_PAGE_ADDR   0x0801FC00UL   /* STM32F103C8 64KB 플래시의 마지막 1KB 페이지 */
 #define EEPROM_PAGE_SIZE   1024U
 
 static uint8_t ram_cache[EEPROM_PAGE_SIZE];

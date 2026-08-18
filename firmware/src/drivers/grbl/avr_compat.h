@@ -23,9 +23,9 @@
 #define ISR(vector) void vector(void)
 
 /* ---- 지연 함수 ---- */
-#define _delay_ms(x) HAL_Delay((uint32_t)(x))
-void delay_us(uint32_t us);
-#define _delay_us(x) delay_us((uint32_t)(x))
+void stm32_delay_us(uint32_t us);
+#define _delay_ms(x) stm32_delay_us((uint32_t)(x) * 1000UL)
+#define _delay_us(x) stm32_delay_us((uint32_t)(x))
 
 /* ---- PROGMEM 관련: STM32는 통합 메모리라 플래시/RAM 구분 불필요 ---- */
 #define PROGMEM
