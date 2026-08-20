@@ -196,10 +196,10 @@ void stm32_stepper_timer_init(void)
   TIM3->ARR = 10 - 1;   // 기본 10us (st_wake_up에서 실제 값으로 재설정)
   TIM3->CR1 = TIM_CR1_OPM; // One Pulse Mode: ARR 도달 시 자동으로 CEN=0
   TIM3->DIER = TIM_DIER_UIE;
-  TIM3->EGR = TIM_EGR_UG;
+  TIM3->EGR = TIM_EGR_UG; //Generate an update event
   TIM3->SR = 0;
 
-  HAL_NVIC_SetPriority(TIM3_IRQn, 0, 1);
+  HAL_NVIC_SetPriority(TIM3_IRQn, 1, 1);
   HAL_NVIC_EnableIRQ(TIM3_IRQn);
 }
 

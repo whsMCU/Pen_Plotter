@@ -562,7 +562,7 @@ static void protocol_exec_rt_suspend()
 
           #ifndef PARKING_ENABLE
 
-            spindle_set_state(SPINDLE_DISABLE,0.0); // De-energize
+            spindle_set_state(SPINDLE_DISABLE,0.0f); // De-energize
             coolant_set_state(COOLANT_DISABLE);     // De-energize
 
           #else
@@ -600,8 +600,8 @@ static void protocol_exec_rt_suspend()
 
               // NOTE: Clear accessory state after retract and after an aborted restore motion.
               pl_data->condition = (PL_COND_FLAG_SYSTEM_MOTION|PL_COND_FLAG_NO_FEED_OVERRIDE);
-              pl_data->spindle_speed = 0.0;
-              spindle_set_state(SPINDLE_DISABLE,0.0); // De-energize
+              pl_data->spindle_speed = 0.0f;
+              spindle_set_state(SPINDLE_DISABLE,0.0f); // De-energize
               coolant_set_state(COOLANT_DISABLE); // De-energize
 
               // Execute fast parking retract motion to parking target location.
@@ -615,7 +615,7 @@ static void protocol_exec_rt_suspend()
 
               // Parking motion not possible. Just disable the spindle and coolant.
               // NOTE: Laser mode does not start a parking motion to ensure the laser stops immediately.
-              spindle_set_state(SPINDLE_DISABLE,0.0); // De-energize
+              spindle_set_state(SPINDLE_DISABLE,0.0f); // De-energize
               coolant_set_state(COOLANT_DISABLE);     // De-energize
 
             }
@@ -631,7 +631,7 @@ static void protocol_exec_rt_suspend()
           if (sys.state == STATE_SLEEP) {
             report_feedback_message(MESSAGE_SLEEP_MODE);
             // Spindle and coolant should already be stopped, but do it again just to be sure.
-            spindle_set_state(SPINDLE_DISABLE,0.0); // De-energize
+            spindle_set_state(SPINDLE_DISABLE,0.0f); // De-energize
             coolant_set_state(COOLANT_DISABLE); // De-energize
             st_go_idle(); // Disable steppers
             while (!(sys.abort)) { protocol_exec_rt_system(); } // Do nothing until reset.

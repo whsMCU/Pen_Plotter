@@ -136,7 +136,7 @@ uint8_t serial_read()
 
 ISR(SERIAL_RX)
 {
-  uint8_t data = UDR0;
+  uint8_t data = UDR0 & 0x1FF;
   uint8_t next_head;
 
   // Pick off realtime command characters directly from the serial stream. These characters are

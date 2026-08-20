@@ -24,10 +24,10 @@
 
 // Homing axis search distance multiplier. Computed by this value times the cycle travel.
 #ifndef HOMING_AXIS_SEARCH_SCALAR
-  #define HOMING_AXIS_SEARCH_SCALAR  1.5 // Must be > 1 to ensure limit switch will be engaged.
+  #define HOMING_AXIS_SEARCH_SCALAR  1.5f // Must be > 1 to ensure limit switch will be engaged.
 #endif
 #ifndef HOMING_AXIS_LOCATE_SCALAR
-  #define HOMING_AXIS_LOCATE_SCALAR  5.0 // Must be > 1 to ensure limit switch is cleared.
+  #define HOMING_AXIS_LOCATE_SCALAR  5.0f // Must be > 1 to ensure limit switch is cleared.
 #endif
 
 #ifdef ENABLE_DUAL_AXIS

@@ -165,21 +165,21 @@ void spindle_stop()
         // Compute intermediate PWM value with linear spindle speed model via piecewise linear fit model.
         #if (N_PIECES > 3)
           if (rpm > RPM_POINT34) {
-            pwm_value = floor(RPM_LINE_A4*rpm - RPM_LINE_B4);
+            pwm_value = floorf(RPM_LINE_A4*rpm - RPM_LINE_B4);
           } else 
         #endif
         #if (N_PIECES > 2)
           if (rpm > RPM_POINT23) {
-            pwm_value = floor(RPM_LINE_A3*rpm - RPM_LINE_B3);
+            pwm_value = floorf(RPM_LINE_A3*rpm - RPM_LINE_B3);
           } else 
         #endif
         #if (N_PIECES > 1)
           if (rpm > RPM_POINT12) {
-            pwm_value = floor(RPM_LINE_A2*rpm - RPM_LINE_B2);
+            pwm_value = floorf(RPM_LINE_A2*rpm - RPM_LINE_B2);
           } else 
         #endif
         {
-          pwm_value = floor(RPM_LINE_A1*rpm - RPM_LINE_B1);
+          pwm_value = floorf(RPM_LINE_A1*rpm - RPM_LINE_B1);
         }
       }
       sys.spindle_speed = rpm;
@@ -210,7 +210,7 @@ void spindle_stop()
         // Compute intermediate PWM value with linear spindle speed model.
         // NOTE: A nonlinear model could be installed here, if required, but keep it VERY light-weight.
         sys.spindle_speed = rpm;
-        pwm_value = floor((rpm-settings.rpm_min)*pwm_gradient) + SPINDLE_PWM_MIN_VALUE;
+        pwm_value = (uint8_t)floorf((rpm-settings.rpm_min)*pwm_gradient) + SPINDLE_PWM_MIN_VALUE;
       }
       return(pwm_value);
     }
@@ -233,7 +233,7 @@ void spindle_stop()
   if (state == SPINDLE_DISABLE) { // Halt or set spindle direction and rpm.
   
     #ifdef VARIABLE_SPINDLE
-      sys.spindle_speed = 0.0;
+      sys.spindle_speed = 0.0f;
     #endif
     spindle_stop();
   
@@ -250,7 +250,7 @@ void spindle_stop()
     #ifdef VARIABLE_SPINDLE
       // NOTE: Assumes all calls to this function is when Grbl is not moving or must remain off.
       if (settings.flags & BITFLAG_LASER_MODE) { 
-        if (state == SPINDLE_ENABLE_CCW) { rpm = 0.0; } // TODO: May need to be rpm_min*(100/MAX_SPINDLE_SPEED_OVERRIDE);
+        if (state == SPINDLE_ENABLE_CCW) { rpm = 0.0f; } // TODO: May need to be rpm_min*(100/MAX_SPINDLE_SPEED_OVERRIDE);
       }
       spindle_set_speed(spindle_compute_pwm_value(rpm));
     #endif

@@ -129,8 +129,8 @@ uint8_t gc_execute_line(char *line)
     // a good enough comprimise and catch most all non-integer errors. To make it compliant,
     // we would simply need to change the mantissa to int16, but this add compiled flash space.
     // Maybe update this later.
-    int_value = trunc(value);
-    mantissa =  round(100*(value - int_value)); // Compute mantissa for Gxx.x commands.
+    int_value = truncf(value);
+    mantissa = (uint16_t)lroundf(100*(value - int_value)); // Compute mantissa for Gxx.x commands.
     // NOTE: Rounding must be used to catch small floating point errors.
 
     // Check if the g-code word is supported or errors due to modal group violations or has
@@ -439,7 +439,7 @@ uint8_t gc_execute_line(char *line)
   #ifdef ENABLE_PARKING_OVERRIDE_CONTROL
     if (bit_istrue(command_words,bit(MODAL_GROUP_M9))) { // Already set as enabled in parser.
       if (bit_istrue(value_words,bit(WORD_P))) {
-        if (gc_block.values.p == 0.0) { gc_block.modal.override = OVERRIDE_DISABLED; }
+        if (gc_block.values.p == 0.0f) { gc_block.modal.override = OVERRIDE_DISABLED; }
         bit_false(value_words,bit(WORD_P));
       }
     }
@@ -526,7 +526,7 @@ uint8_t gc_execute_line(char *line)
       // [G10 L20 Errors]: P must be 0 to nCoordSys(max 9). Axis words missing.
       if (!axis_words) { FAIL(STATUS_GCODE_NO_AXIS_WORDS) }; // [No axis words]
       if (bit_isfalse(value_words,((1<<WORD_P)|(1<<WORD_L)))) { FAIL(STATUS_GCODE_VALUE_WORD_MISSING); } // [P/L word missing]
-      coord_select = trunc(gc_block.values.p); // Convert p value to int.
+      coord_select = truncf(gc_block.values.p); // Convert p value to int.
       if (coord_select > N_COORDINATE_SYSTEM) { FAIL(STATUS_GCODE_UNSUPPORTED_COORD_SYS); } // [Greater than N sys]
       if (gc_block.values.l != 20) {
         if (gc_block.values.l == 2) {
@@ -661,7 +661,7 @@ uint8_t gc_execute_line(char *line)
     // the value must be positive. In inverse time mode, a positive value must be passed with each block.
     } else {
       // Check if feed rate is defined for the motion modes that require it.
-      if (gc_block.values.f == 0.0) { FAIL(STATUS_GCODE_UNDEFINED_FEED_RATE); } // [Feed rate undefined]
+      if (gc_block.values.f == 0.0f) { FAIL(STATUS_GCODE_UNDEFINED_FEED_RATE); } // [Feed rate undefined]
 
       switch (gc_block.modal.motion) {
         case MOTION_MODE_LINEAR:
@@ -743,12 +743,12 @@ uint8_t gc_execute_line(char *line)
 
             // First, use h_x2_div_d to compute 4*h^2 to check if it is negative or r is smaller
             // than d. If so, the sqrt of a negative number is complex and error out.
-            float h_x2_div_d = 4.0 * gc_block.values.r*gc_block.values.r - x*x - y*y;
+            float h_x2_div_d = 4.0f * gc_block.values.r*gc_block.values.r - x*x - y*y;
 
             if (h_x2_div_d < 0) { FAIL(STATUS_GCODE_ARC_RADIUS_ERROR); } // [Arc radius error]
 
             // Finish computing h_x2_div_d.
-            h_x2_div_d = -sqrt(h_x2_div_d)/hypot_f(x,y); // == -(h * 2 / d)
+            h_x2_div_d = -sqrtf(h_x2_div_d)/hypot_f(x,y); // == -(h * 2 / d)
             // Invert the sign of h_x2_div_d if the circle is counter clockwise (see sketch below)
             if (gc_block.modal.motion == MOTION_MODE_CCW_ARC) { h_x2_div_d = -h_x2_div_d; }
 
@@ -776,8 +776,8 @@ uint8_t gc_execute_line(char *line)
                 gc_block.values.r = -gc_block.values.r; // Finished with r. Set to positive for mc_arc
             }
             // Complete the operation by calculating the actual center of the arc
-            gc_block.values.ijk[axis_0] = 0.5*(x-(y*h_x2_div_d));
-            gc_block.values.ijk[axis_1] = 0.5*(y+(x*h_x2_div_d));
+            gc_block.values.ijk[axis_0] = 0.5f*(x-(y*h_x2_div_d));
+            gc_block.values.ijk[axis_1] = 0.5f*(y+(x*h_x2_div_d));
 
           } else { // Arc Center Format Offset Mode
             if (!(ijk_words & (bit(axis_0)|bit(axis_1)))) { FAIL(STATUS_GCODE_NO_OFFSETS_IN_PLANE); } // [No offsets in plane]
@@ -799,10 +799,10 @@ uint8_t gc_execute_line(char *line)
             gc_block.values.r = hypot_f(gc_block.values.ijk[axis_0], gc_block.values.ijk[axis_1]);
 
             // Compute difference between current location and target radii for final error-checks.
-            float delta_r = fabs(target_r-gc_block.values.r);
-            if (delta_r > 0.005) {
-              if (delta_r > 0.5) { FAIL(STATUS_GCODE_INVALID_TARGET); } // [Arc definition error] > 0.5mm
-              if (delta_r > (0.001*gc_block.values.r)) { FAIL(STATUS_GCODE_INVALID_TARGET); } // [Arc definition error] > 0.005mm AND 0.1% radius
+            float delta_r = fabsf(target_r-gc_block.values.r);
+            if (delta_r > 0.005f) {
+              if (delta_r > 0.5f) { FAIL(STATUS_GCODE_INVALID_TARGET); } // [Arc definition error] > 0.5mm
+              if (delta_r > (0.001f*gc_block.values.r)) { FAIL(STATUS_GCODE_INVALID_TARGET); } // [Arc definition error] > 0.005mm AND 0.1% radius
             }
           }
           break;
@@ -984,7 +984,7 @@ uint8_t gc_execute_line(char *line)
   if (axis_command == AXIS_COMMAND_TOOL_LENGTH_OFFSET ) { // Indicates a change.
     gc_state.modal.tool_length = gc_block.modal.tool_length;
     if (gc_state.modal.tool_length == TOOL_LENGTH_OFFSET_CANCEL) { // G49
-      gc_block.values.xyz[TOOL_LENGTH_OFFSET_AXIS] = 0.0;
+      gc_block.values.xyz[TOOL_LENGTH_OFFSET_AXIS] = 0.0f;
     } // else G43.1
     if ( gc_state.tool_length_offset != gc_block.values.xyz[TOOL_LENGTH_OFFSET_AXIS] ) {
       gc_state.tool_length_offset = gc_block.values.xyz[TOOL_LENGTH_OFFSET_AXIS];
@@ -1119,7 +1119,7 @@ uint8_t gc_execute_line(char *line)
       if (sys.state != STATE_CHECK_MODE) {
         if (!(settings_read_coord_data(gc_state.modal.coord_select,gc_state.coord_system))) { FAIL(STATUS_SETTING_READ_FAIL); }
         system_flag_wco_change(); // Set to refresh immediately just in case something altered.
-        spindle_set_state(SPINDLE_DISABLE,0.0);
+        spindle_set_state(SPINDLE_DISABLE,0.0f);
         coolant_set_state(COOLANT_DISABLE);
       }
       report_feedback_message(MESSAGE_PROGRAM_END);

@@ -95,7 +95,7 @@ void mc_arc(float *target, plan_line_data_t *pl_data, float *position, float *of
   float rt_axis1 = target[axis_1] - center_axis1;
 
   // CCW angle between position and target from circle center. Only one atan2() trig computation required.
-  float angular_travel = atan2(r_axis0*rt_axis1-r_axis1*rt_axis0, r_axis0*rt_axis0+r_axis1*rt_axis1);
+  float angular_travel = atan2f(r_axis0*rt_axis1-r_axis1*rt_axis0, r_axis0*rt_axis0+r_axis1*rt_axis1);
   if (is_clockwise_arc) { // Correct atan2 output per direction
     if (angular_travel >= -ARC_ANGULAR_TRAVEL_EPSILON) { angular_travel -= 2*M_PI; }
   } else {
@@ -106,8 +106,8 @@ void mc_arc(float *target, plan_line_data_t *pl_data, float *position, float *of
   // (2x) settings.arc_tolerance. For 99% of users, this is just fine. If a different arc segment fit
   // is desired, i.e. least-squares, midpoint on arc, just change the mm_per_arc_segment calculation.
   // For the intended uses of Grbl, this value shouldn't exceed 2000 for the strictest of cases.
-  uint16_t segments = floor(fabs(0.5*angular_travel*radius)/
-                          sqrt(settings.arc_tolerance*(2*radius - settings.arc_tolerance)) );
+  uint16_t segments = (uint16_t)floorf(fabsf(0.5f*angular_travel*radius)/
+                          sqrtf(settings.arc_tolerance*(2*radius - settings.arc_tolerance)) );
 
   if (segments) {
     // Multiply inverse feed_rate to compensate for the fact that this movement is approximated
@@ -147,8 +147,8 @@ void mc_arc(float *target, plan_line_data_t *pl_data, float *position, float *of
        This is important when there are successive arc motions.
     */
     // Computes: cos_T = 1 - theta_per_segment^2/2, sin_T = theta_per_segment - theta_per_segment^3/6) in ~52usec
-    float cos_T = 2.0 - theta_per_segment*theta_per_segment;
-    float sin_T = theta_per_segment*0.16666667*(cos_T + 4.0);
+    float cos_T = 2.0f - theta_per_segment*theta_per_segment;
+    float sin_T = theta_per_segment*0.16666667f*(cos_T + 4.0f);
     cos_T *= 0.5;
 
     float sin_Ti;
@@ -168,8 +168,8 @@ void mc_arc(float *target, plan_line_data_t *pl_data, float *position, float *of
       } else {
         // Arc correction to radius vector. Computed only every N_ARC_CORRECTION increments. ~375 usec
         // Compute exact location by applying transformation matrix from initial radius vector(=-offset).
-        cos_Ti = cos(i*theta_per_segment);
-        sin_Ti = sin(i*theta_per_segment);
+        cos_Ti = cosf(i*theta_per_segment);
+        sin_Ti = sinf(i*theta_per_segment);
         r_axis0 = -offset[axis_0]*cos_Ti + offset[axis_1]*sin_Ti;
         r_axis1 = -offset[axis_0]*sin_Ti - offset[axis_1]*cos_Ti;
         count = 0;
@@ -263,8 +263,8 @@ uint8_t mc_probe_cycle(float *target, plan_line_data_t *pl_data, uint8_t parser_
   if (sys.abort) { return(GC_PROBE_ABORT); } // Return if system reset has been issued.
 
   // Initialize probing control variables
-  uint8_t is_probe_away = bit_istrue(parser_flags,GC_PARSER_PROBE_IS_AWAY);
-  uint8_t is_no_error = bit_istrue(parser_flags,GC_PARSER_PROBE_IS_NO_ERROR);
+  uint8_t is_probe_away = bit_istrue(parser_flags, GC_PARSER_PROBE_IS_AWAY);
+  uint8_t is_no_error = bit_istrue(parser_flags, GC_PARSER_PROBE_IS_NO_ERROR);
   sys.probe_succeeded = false; // Re-initialize probe history before beginning cycle.
   probe_configure_invert_mask(is_probe_away);
 
