@@ -181,7 +181,7 @@ void stm32_stepper_timer_init(void)
 
   // TIM2: 72MHz 그대로(무분주) 카운트. stepper.c의 OCR1A(=TIM2->ARR)가 매 세그먼트마다
   // 직접 주기를 재설정하고, CNT/CEN/DIER는 st_wake_up()/st_go_idle()이 제어함.
-  TIM2->PSC = 71;
+  TIM2->PSC = 0;
   TIM2->ARR = 0xFFFF;
   TIM2->CR1 = 0;   // CEN=0 (idle 상태로 시작, st_wake_up()에서 켬)
   TIM2->DIER = 0;  // UIE=0
