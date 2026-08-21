@@ -234,13 +234,7 @@ void st_wake_up()
   // --- STM32 포팅: AVR의 2의보수/TCNT0 트릭 대신, TIM3(원펄스모드)의 ARR에
   //     펄스폭(us)을 직접 마이크로초 단위로 써준다 (TIM3는 1MHz 틱으로 설정됨). ---
   st.step_pulse_time = (settings.pulse_microseconds > 0 ? settings.pulse_microseconds - 3 : 0);
-  //TIM3->ARR = st.step_pulse_time;
-  //TIM3->EGR = TIM_EGR_UG;
-  //TIM3->SR &= ~TIM_SR_UIF;
 
-  // Enable Stepper Driver Interrupt (TIM2 = AVR TIMER1 COMPA 대응)
-  //TIM2->ARR = st.exec_segment->cycles_per_tick - 1;
-  //TIM2->PSC = st.exec_segment->prescaler;
   TIM2->CNT = 0;
   TIM2->DIER |= TIM_DIER_UIE;
   TIM2->CR1 |= TIM_CR1_CEN;
@@ -370,7 +364,7 @@ ISR(TIMER1_COMPA_vect)
       // Initialize step segment timing per step and load number of steps to execute.
       OCR1A = st.exec_segment->cycles_per_tick - 1;
       //TIM2->ARR = st.exec_segment->cycles_per_tick - 1;
-      //TIM2->PSC = st.exec_segment->prescaler;
+
       st.step_count = st.exec_segment->n_step; // NOTE: Can sometimes be zero when moving slow.
       // If the new segment starts a new planner block, initialize stepper variables and counters.
       // NOTE: When the segment data index changes, this indicates a new planner block.
@@ -1007,7 +1001,7 @@ void st_prep_buffer()
     float inv_rate = dt/(last_n_steps_remaining - step_dist_remaining); // Compute adjusted step rate inverse
 
     // Compute CPU cycles per step for the prepped segment.
-    uint32_t cycles = (uint32_t)ceilf( (TICKS_PER_MICROSECOND*1000000*60)*inv_rate ); // (cycles/step)
+    uint32_t cycles = (uint32_t)ceilf( ((float)TICKS_PER_MICROSECOND*1000000*60)*inv_rate ); // (cycles/step)
 
     #ifdef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
       // Compute step timing and multi-axis smoothing level.
