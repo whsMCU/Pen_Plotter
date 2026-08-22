@@ -44,6 +44,10 @@ extern volatile uint32_t stm32_dummy_reg;
 #define Z_STEP_BIT      4
 #define STEP_MASK       ((1<<X_STEP_BIT)|(1<<Y_STEP_BIT)|(1<<Z_STEP_BIT))
 
+#define T_STEP_PORT     (GPIOB->ODR)
+#define T_STEP_BIT      5
+#define T_STEP_MASK     (1<<T_STEP_BIT)
+
 #define DIRECTION_DDR    DUMMY_REG
 #define DIRECTION_PORT   (GPIOA->ODR)
 #define X_DIRECTION_BIT  1

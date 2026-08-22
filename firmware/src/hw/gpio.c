@@ -66,6 +66,12 @@ bool gpioInit(void)
   gi.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOA, &gi);
 
+  // --- T_STEP : GPIOB 출력 ---
+  gi.Pin = (1<<T_STEP_BIT);
+  gi.Mode = GPIO_MODE_OUTPUT_PP;
+  gi.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOB, &gi);
+
   // --- USART1 RX(PA10) ---
   gi.Pin = GPIO_PIN_10;
   gi.Mode = GPIO_MODE_INPUT;

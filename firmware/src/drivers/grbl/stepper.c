@@ -309,15 +309,18 @@ void st_go_idle()
    ISR is 5usec typical and 25usec maximum, well below requirement.
    NOTE: This ISR expects at least one step to be executed per segment.
 */
+extern uint32_t micros(void);
+volatile uint32_t ISR2_time, ISR_temp = 0;
 // TODO: Replace direct updating of the int32 position counters in the ISR somehow. Perhaps use smaller
 // int8 variables and update position counters only when a segment completes. This can get complicated
 // with probing and homing cycles that require true real-time positions.
 ISR(TIMER1_COMPA_vect)
 {
+
   TIM2->SR &= ~TIM_SR_UIF; // STM32는 AVR과 달리 인터럽트 플래그를 소프트웨어로 직접 지워야 함
-
+  ISR2_time = micros()-ISR_temp;
+	ISR_temp = micros();
   if (busy) { return; } // The busy-flag is used to avoid reentering this interrupt
-
   // Set the direction pins a couple of nanoseconds before we step the steppers
   DIRECTION_PORT = (DIRECTION_PORT & ~DIRECTION_MASK) | (st.dir_outbits & DIRECTION_MASK);
   #ifdef ENABLE_DUAL_AXIS
@@ -332,6 +335,7 @@ ISR(TIMER1_COMPA_vect)
     #endif
   #else  // Normal operation
     STEP_PORT = (STEP_PORT & ~STEP_MASK) | st.step_outbits;
+    T_STEP_PORT = (T_STEP_PORT & ~T_STEP_MASK) | T_STEP_MASK;
     #ifdef ENABLE_DUAL_AXIS
       STEP_PORT_DUAL = (STEP_PORT_DUAL & ~STEP_MASK_DUAL) | st.step_outbits_dual;
     #endif
@@ -495,6 +499,7 @@ ISR(TIMER0_OVF_vect)
 
   // Reset stepping pins (leave the direction pins)
   STEP_PORT = (STEP_PORT & ~STEP_MASK) | (step_port_invert_mask & STEP_MASK);
+  T_STEP_PORT = (T_STEP_PORT & ~T_STEP_MASK);
   #ifdef ENABLE_DUAL_AXIS
     STEP_PORT_DUAL = (STEP_PORT_DUAL & ~STEP_MASK_DUAL) | (step_port_invert_mask_dual & STEP_MASK_DUAL);
   #endif
