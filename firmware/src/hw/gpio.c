@@ -24,9 +24,10 @@ typedef struct
 
 const gpio_tbl_t gpio_tbl[GPIO_MAX_CH] =
 {
-	{GPIOC, GPIO_PIN_13,  _DEF_INPUT_IT_RF,  	  GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  0. RotaryEncoder_1
-	{GPIOC, GPIO_PIN_14,  _DEF_INPUT_IT_RF,   	GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  1. RotaryEncoder_2
-	{GPIOC, GPIO_PIN_15,  _DEF_INPUT_IT_RISING, GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  2. Push_button
+	{GPIOB, GPIO_PIN_2,   _DEF_OUTPUT,  		    GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  0. LED
+	{GPIOC, GPIO_PIN_13,  _DEF_INPUT_IT_RF,  	  GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  1. RotaryEncoder_1
+	{GPIOC, GPIO_PIN_14,  _DEF_INPUT_IT_RF,   	GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  2. RotaryEncoder_2
+	{GPIOC, GPIO_PIN_15,  _DEF_INPUT_IT_RISING, GPIO_PIN_SET,   GPIO_PIN_RESET, _DEF_LOW},  //  3. Push_button
 };
 
 
@@ -65,12 +66,6 @@ bool gpioInit(void)
   gi.Mode = GPIO_MODE_AF_PP;
   gi.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOA, &gi);
-
-  // --- T_STEP : GPIOB 출력 ---
-  gi.Pin = (1<<T_STEP_BIT);
-  gi.Mode = GPIO_MODE_OUTPUT_PP;
-  gi.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOB, &gi);
 
   // --- USART1 RX(PA10) ---
   gi.Pin = GPIO_PIN_10;
@@ -264,20 +259,7 @@ uint32_t getgpioPin(uint8_t ch)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  switch(GPIO_Pin)
-  {
-      case GPIO_PIN_13:
-      		tick();
-          break;
 
-      case GPIO_PIN_14:
-      		tick();
-          break;
-
-      case GPIO_PIN_15:
-      	  disableOutputs(&stepperX);
-          break;
-  }
 }
 
 #ifdef _USE_HW_CLI

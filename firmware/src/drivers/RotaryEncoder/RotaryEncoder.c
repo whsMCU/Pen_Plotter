@@ -5,7 +5,8 @@
  *      Author: WANG
  */
 
-#include"RotaryEncoder.h"
+#include "RotaryEncoder.h"
+#include "nuts_bolts.h"
 
 // The array holds the values �1 for the entries where a position was decremented,
 // a 1 for the entries where the position was incremented

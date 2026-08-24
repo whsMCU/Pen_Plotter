@@ -17,12 +17,13 @@
     PA6 STEPPERS_DISABLE
     PA9 USART1_TX  PA10 USART1_RX
   GPIOB
-    PB0 X_LIMIT  PB1 Y_LIMIT  PB2 Z_LIMIT
+    PB0 X_LIMIT  PB1 Y_LIMIT  PB5 Z_LIMIT
     PB3 SPINDLE_ENABLE   PB4 SPINDLE_DIRECTION
     PB8 SPINDLE_PWM (TIM4_CH3)
     PB14 COOLANT_FLOOD    PB15 COOLANT_MIST
     PB9 RESET  PB10 FEED_HOLD  PB11 CYCLE_START  PB12 SAFETY_DOOR
     PB13 PROBE
+    PB2 LED
   ─────────────────────────────────────────
 */
 #ifndef stm32_port_h
@@ -44,10 +45,6 @@ extern volatile uint32_t stm32_dummy_reg;
 #define Z_STEP_BIT      4
 #define STEP_MASK       ((1<<X_STEP_BIT)|(1<<Y_STEP_BIT)|(1<<Z_STEP_BIT))
 
-#define T_STEP_PORT     (GPIOB->ODR)
-#define T_STEP_BIT      5
-#define T_STEP_MASK     (1<<T_STEP_BIT)
-
 #define DIRECTION_DDR    DUMMY_REG
 #define DIRECTION_PORT   (GPIOA->ODR)
 #define X_DIRECTION_BIT  1
@@ -66,7 +63,7 @@ extern volatile uint32_t stm32_dummy_reg;
 #define LIMIT_PORT       (GPIOB->ODR)
 #define X_LIMIT_BIT      0
 #define Y_LIMIT_BIT      1
-#define Z_LIMIT_BIT      2
+#define Z_LIMIT_BIT      5
 #define LIMIT_MASK       ((1<<X_LIMIT_BIT)|(1<<Y_LIMIT_BIT)|(1<<Z_LIMIT_BIT))
 #define LIMIT_INT        0                    /* AVR의 "그룹 인터럽트 enable"에 대응 없음 -> 더미 */
 #define LIMIT_INT_vect   limit_pin_isr_body    /* ISR(LIMIT_INT_vect) -> void limit_pin_isr_body(void) */

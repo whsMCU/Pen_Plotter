@@ -104,9 +104,6 @@ typedef enum {
     /* Actual tasks */
     TASK_SYSTEM = 0,
     TASK_LED,
-    TASK_SERIAL,
-    TASK_GCODE,
-    TASK_MOTION,
     TASK_LCD,
     TASK_DEBUG,
 

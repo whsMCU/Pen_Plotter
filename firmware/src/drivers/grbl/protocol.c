@@ -20,6 +20,7 @@
 */
 
 #include "grbl.h"
+#include "scheduler.h"
 
 // Define line flags. Includes comment type tracking and line overflow detection.
 #define LINE_FLAG_OVERFLOW bit(0)
@@ -158,6 +159,7 @@ void protocol_main_loop()
 
     protocol_execute_realtime();  // Runtime command check point.
     if (sys.abort) { return; } // Bail to main() program loop to reset system.
+    scheduler();
   }
 
   return; /* Never reached */

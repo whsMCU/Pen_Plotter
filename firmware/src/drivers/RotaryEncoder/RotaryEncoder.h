@@ -10,6 +10,10 @@
 
 #include "hw.h"
 
+#define PIN1_BIT      13
+#define PIN2_BIT      14
+#define ROTARY_PIN_MASK      ((1<<PIN1_BIT)|(1<<PIN2_BIT))
+
 #ifndef NO_PIN
 #define NO_PIN -1
 #endif

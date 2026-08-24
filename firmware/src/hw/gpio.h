@@ -20,6 +20,7 @@ extern "C" {
 
 enum
 {
+	LED,
 	RotaryEncoder_1,
 	RotaryEncoder_2,
 	PushButton,

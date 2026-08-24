@@ -27,8 +27,6 @@
 
 
 #include "RotaryEncoder.h"
-#include "AccelStepper.h"
-#include "MultiStepper.h"
 
 
 void hwInit(void);

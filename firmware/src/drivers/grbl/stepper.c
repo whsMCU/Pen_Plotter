@@ -335,7 +335,6 @@ ISR(TIMER1_COMPA_vect)
     #endif
   #else  // Normal operation
     STEP_PORT = (STEP_PORT & ~STEP_MASK) | st.step_outbits;
-    T_STEP_PORT = (T_STEP_PORT & ~T_STEP_MASK) | T_STEP_MASK;
     #ifdef ENABLE_DUAL_AXIS
       STEP_PORT_DUAL = (STEP_PORT_DUAL & ~STEP_MASK_DUAL) | st.step_outbits_dual;
     #endif
@@ -499,7 +498,6 @@ ISR(TIMER0_OVF_vect)
 
   // Reset stepping pins (leave the direction pins)
   STEP_PORT = (STEP_PORT & ~STEP_MASK) | (step_port_invert_mask & STEP_MASK);
-  T_STEP_PORT = (T_STEP_PORT & ~T_STEP_MASK);
   #ifdef ENABLE_DUAL_AXIS
     STEP_PORT_DUAL = (STEP_PORT_DUAL & ~STEP_MASK_DUAL) | (step_port_invert_mask_dual & STEP_MASK_DUAL);
   #endif

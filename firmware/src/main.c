@@ -136,7 +136,7 @@ void hwInit(void)
 
   //cliOpen(_DEF_UART1, 115200);
 
-  //ssd1306_Init();
+  ssd1306_Init();
 
 }
 

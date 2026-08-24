@@ -39,7 +39,7 @@ static void ledUpdate(uint32_t currentTimeUs)
     if(currentTimeUs - pre_time >= 1000000)
     {
         pre_time = currentTimeUs;
-        //gpioPinToggle(LED);
+        gpioPinToggle(LED);
     }
 }
 
@@ -50,23 +50,13 @@ static void debugPrint(uint32_t currentTimeUs)
   //uartPrintf_IT(_DEF_UART1, "adcValue =  %d, buff = %d\r\n", adcGetValue(0), adcInternalRead(4));
 }
 
-static void taskHandleSerial(uint32_t currentTimeUs)
-{
-    UNUSED(currentTimeUs);
-
-    cliMain();
-
-}
-
-static void gcodeUpdate(uint32_t currentTimeUs)
-{
-
-}
-
-static void motionUpdate(uint32_t currentTimeUs)
-{
-
-}
+//static void taskHandleSerial(uint32_t currentTimeUs)
+//{
+//    UNUSED(currentTimeUs);
+//
+//    cliMain();
+//
+//}
 
 int32_t newPos = 0;
 int32_t pos = 0;
@@ -109,9 +99,6 @@ task_t tasks[TASK_COUNT];
 task_attribute_t task_attributes[TASK_COUNT] = {
     [TASK_SYSTEM] = DEFINE_TASK("SYSTEM", taskSystemLoad, TASK_PERIOD_HZ(10), TASK_PRIORITY_MEDIUM_HIGH),
     [TASK_LED] = DEFINE_TASK("LED", ledUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
-    [TASK_SERIAL] = DEFINE_TASK("SERIAL", taskHandleSerial, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW), // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
-    [TASK_GCODE] = DEFINE_TASK("GCODE", gcodeUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
-    [TASK_MOTION] = DEFINE_TASK("MOTION", motionUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
     [TASK_LCD] = DEFINE_TASK("LCD", lcdUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
     [TASK_DEBUG] = DEFINE_TASK("DEBUG", debugPrint, TASK_PERIOD_HZ(50), TASK_PRIORITY_LOW),
 };
@@ -133,11 +120,7 @@ void tasksInit(void)
 {
     schedulerInit();
 
-
     setTaskEnabled(TASK_LED, true);
-    setTaskEnabled(TASK_SERIAL, true);
-    setTaskEnabled(TASK_GCODE, true);
-    setTaskEnabled(TASK_MOTION, true);
     setTaskEnabled(TASK_LCD, true);
     setTaskEnabled(TASK_DEBUG, true);
 

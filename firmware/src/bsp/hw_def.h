@@ -16,7 +16,7 @@
 #define      HW_TIM_MAX_CH          4
 
 #define _USE_HW_GPIO
-#define      HW_GPIO_MAX_CH         3
+#define      HW_GPIO_MAX_CH         4
 
 //#define _USE_HW_BUTTON
 //#define      HW_BUTTON_MAX_CH       3
@@ -80,8 +80,8 @@
 #define TRUE 1
 #define FALSE 0
 
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#define max(a, b) ((a) > (b) ? (a) : (b))
+//#define min(a, b) ((a) < (b) ? (a) : (b))
+//#define max(a, b) ((a) > (b) ? (a) : (b))
 //#define abs(x) ((x) > 0 ? (x) : -(x))
 #define zofs(x, y, z) ((x) > (y+z) ? (x) : ((x) < (y-z) ? (x) : (y)))
 #define map(x, in_min, in_max, out_min, out_max) ((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)

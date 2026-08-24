@@ -9,6 +9,7 @@
   건드립니다.
 */
 #include "grbl.h"
+#include "RotaryEncoder.h"
 
 /* stm32_port.h의 DUMMY_REG가 참조하는 실제 저장소 (부작용 없는 더미 레지스터) */
 volatile uint32_t stm32_dummy_reg;
@@ -143,20 +144,35 @@ void stm32_exti_init(void)
 {
   HAL_NVIC_SetPriority(EXTI0_IRQn, 3, 0);      HAL_NVIC_EnableIRQ(EXTI0_IRQn);
   HAL_NVIC_SetPriority(EXTI1_IRQn, 3, 0);      HAL_NVIC_EnableIRQ(EXTI1_IRQn);
-  HAL_NVIC_SetPriority(EXTI2_IRQn, 3, 0);      HAL_NVIC_EnableIRQ(EXTI2_IRQn);
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 3, 0);    HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 3, 0);  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 }
 
 static void exti_dispatch(uint32_t line_mask)
 {
-  if (line_mask & LIMIT_MASK)   { limit_pin_isr_body(); }
-  if (line_mask & CONTROL_MASK) { control_pin_isr_body(); }
+  if (line_mask & LIMIT_MASK)   	 { limit_pin_isr_body(); }
+  if (line_mask & CONTROL_MASK) 	 { control_pin_isr_body(); }
+  if (line_mask & ROTARY_PIN_MASK)
+  {
+  	switch(line_mask)
+  	{
+  		case GPIO_PIN_13:
+  			tick();
+  			break;
+
+  		case GPIO_PIN_14:
+  			tick();
+  			break;
+
+  		case GPIO_PIN_15:
+  			break;
+
+  	}
+  }
 }
 
 void EXTI0_IRQHandler(void)     { if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_0)) { __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_0); exti_dispatch(GPIO_PIN_0); } }
 void EXTI1_IRQHandler(void)     { if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_1)) { __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_1); exti_dispatch(GPIO_PIN_1); } }
-void EXTI2_IRQHandler(void)     { if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_2)) { __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_2); exti_dispatch(GPIO_PIN_2); } }
 
 void EXTI9_5_IRQHandler(void)
 {
